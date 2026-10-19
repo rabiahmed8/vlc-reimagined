@@ -66,8 +66,12 @@ Rectangle {
 
                 bannerHeight: root.height
 
+                // Juxtopposed: system themes have no fullscreen button image
+                visible: modelData.type !== CSDButton.Fullscreen
+
                 buttonType: {
                     switch (modelData.type) {
+                    case CSDButton.Fullscreen:
                     case CSDButton.Minimize:
                         return CSDThemeImage.MINIMIZE
 

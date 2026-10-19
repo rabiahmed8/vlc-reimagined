@@ -451,11 +451,11 @@ Item {
         anchors.fill: parent
         anchors.margins: dragItem.margins
 
-        color: fsmLoadingFailed.active ? theme.bg.negative : theme.bg.primary
-        border.color: theme.border
+        color: fsmLoadingFailed.active ? theme.bg.negative : VLCStyle.palette.juxtBgA3
+        border.color: VLCStyle.palette.juxtDividerDim
         border.width: VLCStyle.dp(1, VLCStyle.scale)
         border.pixelAligned: (radius < Number.EPSILON)
-        radius: VLCStyle.dp(6, VLCStyle.scale)
+        radius: VLCStyle.dp(8, VLCStyle.scale)
 
         Widgets.RoundedRectangleShadow {
             blending: false // offscreen stacked below everything, no need for blending even though it is not opaque
@@ -582,9 +582,9 @@ Item {
         height: dragItem.coverSize
         radius: dragItem.coverSize
         visible: dragItem._indexesSize > dragItem._maxCovers
-        color: theme.bg.secondary
+        color: VLCStyle.palette.orange500
         border.width: VLCStyle.dp(1, VLCStyle.scale)
-        border.color: theme.border
+        border.color: VLCStyle.palette.orange500
         border.pixelAligned: (radius < Number.EPSILON)
 
         Widgets.MenuLabel {
@@ -593,8 +593,9 @@ Item {
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: VLCStyle.fontSize_small
+            font.weight: Font.DemiBold
 
-            color: theme.accent
+            color: VLCStyle.palette.juxtFgB1
 
             text: "+" + (dragItem._indexesSize - dragItem._maxCovers)
         }
@@ -633,7 +634,7 @@ Item {
                 return qsTr("%1 selected").arg(dragItem._indexesSize)
             }
         }
-        color: theme.fg.secondary
+        color: VLCStyle.palette.juxtFg1
     }
 
 }

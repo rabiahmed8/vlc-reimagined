@@ -42,6 +42,8 @@
 #include <QString>
 #include <QFont>
 #include <QToolButton>
+#include <QListWidget>
+#include <QLineEdit>
 #include <QButtonGroup>
 #include <QSignalMapper>
 #include <QVBoxLayout>
@@ -223,58 +225,107 @@ private:
 SPrefsCatList::SPrefsCatList( qt_intf_t *_p_intf, QWidget *_parent ) :
                                   QWidget( _parent ), p_intf( _p_intf )
 {
-    QHBoxLayout *layout = new QHBoxLayout();
+    /* Juxtopposed: vertical settings sidebar with a search field. */
+    QVBoxLayout *layout = new QVBoxLayout( this );
+    layout->setContentsMargins( 12, 12, 12, 12 );
+    layout->setSpacing( 8 );
 
-    /* Use autoExclusive buttons and a mapper as QButtonGroup can't
-       set focus (keys) when it manages the buttons's exclusivity.
-       See QT bugs 131 & 816 and QAbstractButton's source code. */
-    QSignalMapper *mapper = new QSignalMapper( layout );
-    connect( mapper, &QSignalMapper::mappedInt, this, &SPrefsCatList::switchPanel );
-    qreal dpr = devicePixelRatioF();
+    m_search = new QLineEdit( this );
+    m_search->setPlaceholderText( qfut( "Search" ) );
+    m_search->setClearButtonEnabled( true );
+    m_search->setObjectName( "juxtPrefsSearch" );
+    layout->addWidget( m_search );
 
-    auto addCategory = [&]( QString label, QString ltooltip, QString icon, int numb) {
-        QToolButton * button = new QToolButton( this );
-        /* Scale icon to non native size outside of toolbutton to avoid widget size */
-        /* computation using native size */
-        QPixmap scaled = QPixmap( icon )
-              .scaledToHeight( ICON_HEIGHT * dpr, Qt::SmoothTransformation );
-        scaled.setDevicePixelRatio( dpr );
-        button->setIcon( scaled );
-        button->setText( label );
-        button->setToolTip( ltooltip );
-        button->setToolButtonStyle( Qt::ToolButtonTextUnderIcon );
-        button->setIconSize( QSize( ICON_WIDTH, ICON_HEIGHT ) );
-        button->setMinimumWidth( 40 + ICON_WIDTH );
-        button->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-        button->setAutoRaise( true );
-        button->setCheckable( true );
-        button->setAutoExclusive( true );
-        connect( button, &QToolButton::clicked, mapper, QOverload<>::of(&QSignalMapper::map) );
-        mapper->setMapping( button, numb );
-        layout->addWidget( button );
+    m_list = new QListWidget( this );
+    m_list->setObjectName( "juxtPrefsList" );
+    m_list->setFrameShape( QFrame::NoFrame );
+    m_list->setIconSize( QSize( 20, 20 ) );
+    m_list->setUniformItemSizes( true );
+    m_list->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    m_list->setSelectionMode( QAbstractItemView::SingleSelection );
+    layout->addWidget( m_list, 1 );
+
+    auto addGroup = [&]( const QString& label ) {
+        QListWidgetItem *item = new QListWidgetItem( label, m_list );
+        item->setFlags( Qt::NoItemFlags );
+        QFont f = item->font();
+        f.setPointSizeF( f.pointSizeF() * 0.9 );
+        item->setFont( f );
+        item->setForeground( QColor( "#6B6B6B" ) );
+        item->setSizeHint( QSize( 0, 30 ) );
+        item->setData( Qt::UserRole, -1 );
     };
 
+    const qreal dpr = devicePixelRatioF();
+    auto addCategory = [&]( const QString& label, const QString& ltooltip,
+                            const QString& icon, int numb ) {
+        QListWidgetItem *item = new QListWidgetItem( m_list );
+        QPixmap scaled = QPixmap( icon ).scaledToHeight( 20 * dpr, Qt::SmoothTransformation );
+        scaled.setDevicePixelRatio( dpr );
+        item->setIcon( QIcon( scaled ) );
+        item->setText( label );
+        item->setToolTip( ltooltip );
+        item->setSizeHint( QSize( 0, 40 ) );
+        item->setData( Qt::UserRole, numb );
+    };
+
+    addGroup( qfut( "App" ) );
     addCategory( qfut(INTF_TITLE), qfut(INTF_TOOLTIP), ":/prefsmenu/spref_interface.png" , SPrefsInterface );
+
+    addGroup( qfut( "Media" ) );
     addCategory( qfut(AUDIO_TITLE), qfut(AUDIO_TOOLTIP), ":/prefsmenu/spref_audio.png", SPrefsAudio );
     addCategory( qfut(VIDEO_TITLE), qfut(VIDEO_TOOLTIP), ":/prefsmenu/spref_video.png", SPrefsVideo );
     addCategory( qfut(SUBPIC_TITLE), qfut(SUBPIC_TOOLTIP), ":/prefsmenu/spref_subtitles.png", SPrefsSubtitles );
+
+    addGroup( qfut( "System" ) );
     addCategory( qfut(INPUT_TITLE), qfut(INPUT_TOOLTIP), ":/prefsmenu/spref_input.png", SPrefsInputAndCodecs );
     addCategory( qfut(HOTKEYS_TITLE), qfut(HOTKEYS_TOOLTIP), ":/prefsmenu/spref_hotkeys.png", SPrefsHotkeys );
     if ( vlc_ml_instance_get( p_intf ) != nullptr )
         addCategory( qfut(ML_TITLE), qfut(ML_TOOLTIP), ":/prefsmenu/spref_medialibrary.png", SPrefsMediaLibrary );
 
-    qobject_cast<QToolButton*>(mapper->mapping(SPrefsInterface))->setChecked(true);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing( 1 );
+    connect( m_list, &QListWidget::currentItemChanged, this,
+             [this]( QListWidgetItem *current, QListWidgetItem * ) {
+        if ( current == nullptr )
+            return;
+        const int panel = current->data( Qt::UserRole ).toInt();
+        if ( panel >= 0 )
+            emit currentItemChanged( panel );
+    } );
 
-    setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
-    setMinimumWidth( ICON_HEIGHT * 6 + 10 );
-    setLayout( layout );
+    connect( m_search, &QLineEdit::textChanged, this, [this]( const QString& text ) {
+        for ( int i = 0; i < m_list->count(); ++i )
+        {
+            QListWidgetItem *item = m_list->item( i );
+            const int panel = item->data( Qt::UserRole ).toInt();
+            if ( panel < 0 )
+            {
+                item->setHidden( !text.isEmpty() );
+                continue;
+            }
+            item->setHidden( !item->text().contains( text, Qt::CaseInsensitive ) );
+        }
+    } );
+
+    setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Expanding );
+    setMinimumWidth( 230 );
+    setMaximumWidth( 270 );
+
+    m_list->setCurrentRow( 1 ); // first category, after the "App" header
 }
 
 void SPrefsCatList::switchPanel( int i )
 {
-    emit currentItemChanged( i );
+    if ( m_list == nullptr )
+        return;
+    for ( int row = 0; row < m_list->count(); ++row )
+    {
+        QListWidgetItem *item = m_list->item( row );
+        if ( item->data( Qt::UserRole ).toInt() == i )
+        {
+            m_list->setCurrentRow( row );
+            return;
+        }
+    }
 }
 
 /*********************************************************************
@@ -699,6 +750,57 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             auto& ui = m_interfaceUI;
             ui.setupUi( panel );
             panel_label->setText( qtr("Interface Settings") );
+
+            /* Juxtopposed: Appearance card with the theme segmented control,
+             * bound to VLC's real ColorSchemeModel (System / Day / Night). */
+            {
+                QGroupBox *appearance = new QGroupBox( qtr( "Appearance" ), panel );
+                QHBoxLayout *row = new QHBoxLayout( appearance );
+                row->setContentsMargins( 12, 8, 12, 8 );
+                row->setSpacing( 8 );
+
+                QLabel *themeLabel = new QLabel( qtr( "Theme" ), appearance );
+                themeLabel->setMinimumWidth( 110 );
+                row->addWidget( themeLabel );
+
+                MainCtx *ctx = p_intf ? p_intf->p_mi : nullptr;
+                ColorSchemeModel *schemeModel = ctx ? ctx->getColorScheme() : nullptr;
+
+                QButtonGroup *themeGroup = new QButtonGroup( appearance );
+                themeGroup->setExclusive( true );
+
+                /* Figma order: Dark, Light, System (model rows: System, Day, Night) */
+                const struct { const char *label; int index; } themes[] = {
+                    { QT_TR_NOOP( "Dark" ),   ColorSchemeModel::Night  },
+                    { QT_TR_NOOP( "Light" ),  ColorSchemeModel::Day    },
+                    { QT_TR_NOOP( "System" ), ColorSchemeModel::System },
+                };
+                for ( const auto& theme : themes )
+                {
+                    QToolButton *button = new QToolButton( appearance );
+                    button->setText( qtr( theme.label ) );
+                    button->setCheckable( true );
+                    button->setAutoRaise( true );
+                    button->setToolButtonStyle( Qt::ToolButtonTextOnly );
+                    button->setObjectName( "themeSegment" );
+                    button->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed );
+                    button->setMinimumSize( 96, 30 );
+                    themeGroup->addButton( button, theme.index );
+                    row->addWidget( button );
+                    if ( schemeModel && schemeModel->currentIndex() == theme.index )
+                        button->setChecked( true );
+                }
+
+                row->addStretch( 1 );
+
+                if ( schemeModel )
+                    connect( themeGroup, &QButtonGroup::idClicked,
+                             schemeModel, &ColorSchemeModel::setCurrentIndex );
+
+                if ( QBoxLayout *panelLayout = qobject_cast<QBoxLayout *>( panel->layout() ) )
+                    panelLayout->insertWidget( 0, appearance );
+            }
+
 
 #ifndef _WIN32
             ui.langBox->hide();

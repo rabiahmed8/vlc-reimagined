@@ -26,6 +26,7 @@ import QtQuick.Window
 import VLC.MainInterface
 import VLC.Style
 import VLC.Playlist
+import VLC.Player
 import VLC.Widgets as Widgets
 import VLC.Menus as Menus
 import VLC.Util
@@ -66,9 +67,9 @@ T.ToolBar {
         colorSet: ColorContext.Window
     }
 
-    background:  Widgets.AcrylicBackground {
-        enabled: root.useAcrylic
-        tintColor: theme.bg.primary
+    // Juxtopposed: the title bar is solid chrome, like the player's.
+    background: Rectangle {
+        color: theme.bg.primary
     }
 
     contentItem: Item {
@@ -101,8 +102,39 @@ T.ToolBar {
                 Navigation.parentItem: root
                 Navigation.rightItem: playqueueButtonsTop
 
+                // Juxtopposed order: cone, menu, side bar toggle, back.
+                Widgets.BannerCone {
+                    id: logo
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: theme.accent
+                }
+
+                Widgets.IconToolButton {
+                    id: menuBtn
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: !MainCtx.hasToolbarMenu
+                    font.pixelSize: VLCStyle.icon_normal
+                    text: VLCIcons.more
+                    description: qsTr("Menu")
+                    checked: contextMenu.shown
+
+                    Navigation.parentItem: navigationButtons
+                    Navigation.rightItem: navigationVisibilty
+
+                    onClicked: contextMenu.popup(this.mapToGlobal(0, height))
+
+                    Menus.QmlGlobalMenu {
+                        id: contextMenu
+                        ctx: MainCtx
+                    }
+                }
+
                 Widgets.IconToolButton {
                     id: navigationVisibilty
+
+                    anchors.verticalCenter: parent.verticalCenter
 
                     focus: true
 
@@ -111,27 +143,25 @@ T.ToolBar {
 
                     AccessibleCompat.id: "sidebarToggleButton"
 
-                    font.pixelSize: VLCStyle.icon_banner
-                    height: VLCStyle.bannerButton_height
-                    width: VLCStyle.bannerButton_width
+                    font.pixelSize: VLCStyle.icon_normal
 
                     onClicked: root.toggleNavigationVisibility()
 
                     Navigation.parentItem: navigationButtons
+                    Navigation.leftItem: menuBtn
                     Navigation.rightItem: historyBack
                 }
 
                 Widgets.IconToolButton {
                     id: historyBack
 
-                    font.pixelSize: VLCStyle.icon_banner
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    font.pixelSize: VLCStyle.icon_normal
                     text: VLCIcons.back
                     description: qsTr("Previous")
 
                     AccessibleCompat.id: "historyBackButton"
-
-                    height: VLCStyle.bannerButton_height
-                    width: VLCStyle.bannerButton_width
 
                     onClicked: History.previous()
                     enabled: !History.previousEmpty
@@ -145,15 +175,21 @@ T.ToolBar {
                     Navigation.leftItem: navigationVisibilty
                     Navigation.rightItem: playlistBtn
                 }
-
-                Widgets.BannerCone {
-                    id: logo
-
-                    sourceSize.width: VLCStyle.bannerButton_height
-                    sourceSize.height: VLCStyle.bannerButton_height
-                    color: theme.accent
-                }
             }
+        }
+
+        T.Label {
+            id: windowTitle
+
+            anchors.centerIn: parent
+            width: Math.min(implicitWidth,
+                            2 * Math.min(parent.width / 2 - navigationButtons.x - navigationButtons.width,
+                                         playqueueButtonsTop.x - parent.width / 2) - VLCStyle.margin_normal)
+
+            text: (Player.title !== "") ? Player.title : qsTr("VLC media player")
+            color: theme.fg.primary
+            font.pixelSize: VLCStyle.fontSize_large
+            elide: Text.ElideRight
         }
 
         Item {
@@ -189,32 +225,9 @@ T.ToolBar {
                     plListView: root.plListView
 
                     Navigation.parentItem: playqueueButtonsTop
-                    Navigation.rightItem: menuBtn
                     Navigation.leftItem: historyBack
 
                     onClicked:  root.togglePlayqueueVisibility()
-                }
-
-                Widgets.IconToolButton {
-                    id: menuBtn
-
-                    visible: !MainCtx.hasToolbarMenu
-                    font.pixelSize: VLCStyle.icon_banner
-                    text: VLCIcons.more
-                    description: qsTr("Menu")
-                    width: VLCStyle.bannerButton_width
-                    height: VLCStyle.bannerButton_height
-                    checked: contextMenu.shown
-
-                    Navigation.parentItem: playqueueButtonsTop
-                    Navigation.leftItem: playlistBtn
-
-                    onClicked: contextMenu.popup(this.mapToGlobal(0, height))
-
-                    Menus.QmlGlobalMenu {
-                        id: contextMenu
-                        ctx: MainCtx
-                    }
                 }
             }
         }

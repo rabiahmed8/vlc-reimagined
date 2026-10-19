@@ -1,0 +1,15 @@
+Icons in this folder are SVG exports from Juxtopposed's VLC Redesign
+(Figma Community file "VLC Redesign (Community)"), compiled into VLCIcons.ttf.
+
+  Design:  Juxtopposed - https://www.juxtopposed.com
+  Figma:   https://www.figma.com/design/5UEUReDQz2dQjwoQDHY5z9/VLC-Redesign--Community-
+  Video:   https://www.youtube.com/watch?v=ERFeOgqk324
+
+Exports obtained from the community rebuild at
+https://github.com/SpeedyPete25/Juxtopposed-VLC-Rebuild (design/figma-assets).
+
+Inter font (pixmaps/fonts) is (c) The Inter Project Authors, SIL Open Font
+License 1.1 - see pixmaps/fonts/Inter-LICENSE.txt.
+
+This is an unofficial community implementation, not affiliated with or endorsed
+by VideoLAN or Juxtopposed. VLC's own code and licence notices are unchanged.

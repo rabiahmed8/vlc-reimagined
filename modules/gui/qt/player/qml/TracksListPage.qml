@@ -41,14 +41,21 @@ RowLayout {
     //FIXME make TrackMenuController a proper type (see TrackMenu)
     required property QtObject trackMenuController
 
+    // Juxtopposed: show only the audio column (AudioTrackButton)
+    property bool audioOnly: false
+
+    property var preferredWidth: audioOnly ? VLCStyle.dp(320, VLCStyle.scale) : undefined
+
     spacing: 0
 
     focus: true
 
-    onActiveFocusChanged: if (activeFocus) playbackBtn.forceActiveFocus()
+    onActiveFocusChanged: if (activeFocus) (audioOnly ? row : playbackBtn).forceActiveFocus()
 
     Widgets.ButtonExt {
         id: playbackBtn
+
+        visible: !root.audioOnly
 
         text: qsTr("%1x").arg(+Player.rate.toFixed(2))
 
@@ -73,9 +80,10 @@ RowLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
 
-        Navigation.leftItem: playbackBtn
+        Navigation.leftItem: root.audioOnly ? null : playbackBtn
 
         TrackColumn {
+            visible: !root.audioOnly
             title: qsTr("Subtitle")
             tracksModel: Player.subtitleTracks
             menuIcon: VLCIcons.expand
@@ -96,6 +104,7 @@ RowLayout {
         }
 
         TrackColumn {
+            visible: !root.audioOnly
             title: qsTr("Video Tracks")
             tracksModel: Player.videoTracks
             menuIcon: VLCIcons.add
@@ -126,7 +135,7 @@ RowLayout {
 
         focus: true
 
-        width: row.width / 3
+        width: row.width / (root.audioOnly ? 1 : 3)
         height: row.height
 
         onActiveFocusChanged: if (activeFocus) tracksList.forceActiveFocus(focusReason)
@@ -261,7 +270,7 @@ RowLayout {
 
         onTriggered: {
             if (action === QmlSubtitleMenu.Open) {
-                DialogsProvider.loadSubtitlesFile()
+                subtitleLoader.open()
             }
             else if (action === QmlSubtitleMenu.Synchronize) {
                 trackMenuController.requestSubtitlePage()
@@ -270,6 +279,10 @@ RowLayout {
                 Player.openVLsub()
             }
         }
+    }
+
+    SubtitleLoader {
+        id: subtitleLoader
     }
 
     QmlAudioMenu {

@@ -43,16 +43,18 @@ TextField {
 
     verticalAlignment: Text.AlignVCenter
 
-    property real radius
+    property real radius: VLCStyle.dp(6, VLCStyle.scale)
 
     background: Rectangle {
         implicitWidth: 200
         implicitHeight: 40
-        border.width: control.enabled ? VLCStyle.dp(2, VLCStyle.scale) : 0
-        color: theme.bg.primary
-        border.color: theme.border
+        border.width: control.enabled ? VLCStyle.dp(1, VLCStyle.scale) : 0
+        color: VLCStyle.palette.juxtBgA3
+        border.color: control.activeFocus ? VLCStyle.palette.orange500 : VLCStyle.palette.juxtDividerDim
         border.pixelAligned: (radius < Number.EPSILON)
         radius: control.radius
+
+        Behavior on border.color { ColorAnimation { duration: VLCStyle.duration_short } }
     }
 
 }

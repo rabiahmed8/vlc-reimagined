@@ -33,7 +33,9 @@ Row {
     property color color: theme.fg.primary
     property color hoverColor: theme.bg.primary.alpha(0.5)
 
-    readonly property bool useWinIcons: ((MainCtx.osName === MainCtx.Windows)&&(MainCtx.osVersion >= 10))
+    // Juxtopposed: always use the redesign's window glyphs from VLCIcons
+    // rather than the Segoe MDL2 ones on Windows 10+.
+    readonly property bool useWinIcons: false
 
     readonly property bool buttonHovered: {
         let h = false
@@ -94,6 +96,13 @@ Row {
                         return (MainCtx.intfMainWindow.visibility === Window.Maximized)
                                 ? VLCIcons.window_restore
                                 : VLCIcons.window_maximize
+                }
+
+                case CSDButton.Fullscreen:
+                {
+                    return (MainCtx.intfMainWindow.visibility === Window.FullScreen)
+                            ? VLCIcons.defullscreen
+                            : VLCIcons.fullscreen
                 }
 
                 case CSDButton.Close:

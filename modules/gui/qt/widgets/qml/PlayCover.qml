@@ -86,11 +86,18 @@ Item {
     }
 
     Rectangle {
+        id: bgCircle
         anchors.fill: parent
 
         radius: width / 2
 
-        color: "white"
+        color: hoverHandler.hovered ? VLCStyle.palette.orange800 : VLCStyle.palette.orange500
+
+        Behavior on color {
+            ColorAnimation {
+                duration: VLCStyle.duration_short
+            }
+        }
 
         Widgets.DefaultShadow {
 
@@ -102,11 +109,7 @@ Item {
 
         text: VLCIcons.play_filled
 
-        color: {
-            const accent = theme.accent
-            const t = root._hoverProgress
-            return Qt.rgba(accent.r * t, accent.g * t, accent.b * t, 1)
-        }
+        color: VLCStyle.palette.juxtFgB1
 
         font.pixelSize: Math.round(parent.width / 2)
     }

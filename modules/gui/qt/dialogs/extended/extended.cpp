@@ -36,6 +36,8 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include <QWindow>
+#include <QPalette>
+#include <QColor>
 #include <vlc_configuration.h>
 #include <vlc_modules.h>
 
@@ -51,6 +53,47 @@ ExtendedDialog::ExtendedDialog( qt_intf_t *_p_intf )
     setWindowOpacity( var_InheritFloat( p_intf, "qt-opacity" ) );
     setWindowTitle( qtr( "Adjustments and Effects" ) );
     setWindowRole( "vlc-extended" );
+
+    /* Juxtopposed redesign: dark card styling and orange accents */
+    {
+        QPalette juxtPalette = palette();
+        juxtPalette.setColor( QPalette::Window, QColor( "#1B1B1B" ) );
+        juxtPalette.setColor( QPalette::Base, QColor( "#0E0E0E" ) );
+        juxtPalette.setColor( QPalette::AlternateBase, QColor( "#161616" ) );
+        juxtPalette.setColor( QPalette::WindowText, QColor( "#969696" ) );
+        juxtPalette.setColor( QPalette::Text, QColor( "#D8D8D8" ) );
+        juxtPalette.setColor( QPalette::Button, QColor( "#262626" ) );
+        juxtPalette.setColor( QPalette::ButtonText, QColor( "#D8D8D8" ) );
+        juxtPalette.setColor( QPalette::Highlight, QColor( "#D37918" ) );
+        juxtPalette.setColor( QPalette::HighlightedText, QColor( "#161616" ) );
+        setPalette( juxtPalette );
+        setStyleSheet( QStringLiteral(
+            "QDialog { background-color: #1B1B1B; color: #D8D8D8; font-family: Inter, Segoe UI, sans-serif; }"
+            "QTabWidget::pane { border: 1px solid #232323; background-color: #161616; border-radius: 10px; padding: 6px; }"
+            "QTabBar::tab { background: #1B1B1B; color: #8F8F8F; border: 1px solid #232323; border-bottom: none; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 6px 14px; margin-right: 2px; }"
+            "QTabBar::tab:selected { background: #262626; color: #D8D8D8; border-color: #373737; }"
+            "QTabBar::tab:hover:!selected { background: #222222; color: #B0B0B0; }"
+            "QGroupBox { background-color: #161616; border: 1px solid #232323; border-radius: 10px; margin-top: 18px; padding: 12px; }"
+            "QGroupBox::title { subcontrol-origin: margin; left: 14px; padding: 0 6px; color: #A0A0A0; background-color: transparent; }"
+            "QPushButton { background-color: #262626; border: 1px solid #333333; border-radius: 8px; padding: 5px 14px; color: #D8D8D8; }"
+            "QPushButton:hover { background-color: #303030; }"
+            "QPushButton:default { background-color: #D37918; border-color: #D37918; color: #161616; font-weight: bold; }"
+            "QSlider::groove:horizontal { height: 6px; background: #090909; border-radius: 3px; }"
+            "QSlider::sub-page:horizontal { background: #D37918; border-radius: 3px; }"
+            "QSlider::handle:horizontal { background: #D37918; width: 14px; margin-top: -4px; margin-bottom: -4px; border-radius: 7px; }"
+            "QSlider::handle:horizontal:hover { background: #E08A2E; }"
+            "QSlider::groove:vertical { width: 6px; background: #090909; border-radius: 3px; }"
+            "QSlider::sub-page:vertical { background: #090909; border-radius: 3px; }"
+            "QSlider::add-page:vertical { background: #D37918; border-radius: 3px; }"
+            "QSlider::handle:vertical { background: #D37918; height: 14px; margin-left: -4px; margin-right: -4px; border-radius: 7px; }"
+            "QSlider::handle:vertical:hover { background: #E08A2E; }"
+            "QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox { background-color: #1B1B1B; border: 1px solid #373737; border-radius: 8px; padding: 4px 8px; color: #D8D8D8; }"
+            "QCheckBox::indicator { width: 16px; height: 16px; border-radius: 5px; border: 1px solid #373737; background: #1B1B1B; }"
+            "QCheckBox::indicator:checked { background: #D37918; border-color: #D37918; }"
+            "QRadioButton::indicator { width: 14px; height: 14px; border-radius: 7px; border: 1px solid #373737; background: #1B1B1B; }"
+            "QRadioButton::indicator:checked { border: 4px solid #D37918; background: #1B1B1B; }"
+        ) );
+    }
 
     QVBoxLayout *layout = new QVBoxLayout( this );
     layout->setContentsMargins( 0, 2, 0, 1 );

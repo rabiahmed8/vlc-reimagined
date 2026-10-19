@@ -42,6 +42,7 @@ public:
         MaximizeRestore,
         Close,
         SystemMenu,
+        Fullscreen, // Juxtopposed: handled by Qt, not the OS caption
 
         TypeCount
     };
@@ -109,6 +110,7 @@ public:
 private slots:
     void minimizeButtonClicked();
     void maximizeRestoreButtonClicked();
+    void fullscreenButtonClicked();
     void closeButtonClicked();
 
 private:

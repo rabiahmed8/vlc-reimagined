@@ -74,11 +74,15 @@ T.Control {
     // Optional, but required to drop a drag
     property alias acceptDrop: dropAreaLayout.acceptDrop
 
+    // Juxtopposed: compact rows of the player side panel (32px thumbnail,
+    // a single line of text, no duration)
+    property bool juxtStyle: false
+
     // Settings
 
     hoverEnabled: true
 
-    verticalPadding: VLCStyle.margin_xxxsmall
+    verticalPadding: juxtStyle ? VLCStyle.dp(5, VLCStyle.scale) : VLCStyle.margin_xxxsmall
 
     leftPadding: VLCStyle.margin_normal
 
@@ -169,8 +173,8 @@ T.Control {
         Item {
             id: artworkItem
 
-            Layout.preferredHeight: VLCStyle.icon_playlistArt
-            Layout.preferredWidth: VLCStyle.icon_playlistArt
+            Layout.preferredHeight: delegate.juxtStyle ? VLCStyle.juxtSidePanel_thumb : VLCStyle.icon_playlistArt
+            Layout.preferredWidth: delegate.juxtStyle ? VLCStyle.juxtSidePanel_thumb : VLCStyle.icon_playlistArt
             Layout.alignment: Qt.AlignVCenter
 
             Accessible.role: Accessible.Graphic
@@ -194,7 +198,7 @@ T.Control {
                 visible: !statusIcon.visible
                 asynchronous: true
                 opacity: (status === Image.Ready ? 1.0 : 0.0)
-                radius: VLCStyle.listAlbumCover_radius
+                radius: delegate.juxtStyle ? VLCStyle.dp(2, VLCStyle.scale) : VLCStyle.listAlbumCover_radius
                 backgroundColor: theme.bg.primary
 
                 sourceSize: Qt.size(width * eDPR, height * eDPR)
@@ -274,7 +278,7 @@ T.Control {
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: VLCStyle.margin_large
+            Layout.leftMargin: delegate.juxtStyle ? VLCStyle.dp(10, VLCStyle.scale) : VLCStyle.margin_large
             spacing: VLCStyle.margin_xxxsmall
 
             Widgets.ListLabel {
@@ -282,7 +286,9 @@ T.Control {
 
                 Layout.fillWidth: true
 
-                font.weight: delegate.isCurrent ? Font.Bold : Font.DemiBold
+                font.pixelSize: delegate.juxtStyle ? VLCStyle.fontSize_large : VLCStyle.fontSize_normal
+                font.weight: delegate.juxtStyle ? (delegate.isCurrent ? Font.DemiBold : Font.Normal)
+                                                : (delegate.isCurrent ? Font.Bold : Font.DemiBold)
                 text: delegate.title || qsTr("Unknown Title")
                 color: theme.fg.primary
             }
@@ -292,6 +298,8 @@ T.Control {
 
                 Layout.fillWidth: true
 
+                visible: !delegate.juxtStyle
+
                 text: delegate.artist || (delegate.title.length === 0 ? delegate.url : "")
                 color: theme.fg.primary
             }
@@ -300,11 +308,28 @@ T.Control {
         Widgets.ListLabel {
             id: textDuration
 
+            visible: !delegate.juxtStyle
+
             text: delegate.duration.formatHMS()
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             color: theme.fg.primary
             opacity: 0.5
+        }
+
+        Widgets.IconToolButton {
+            id: removeButton
+            z: 2
+            visible: delegate.hovered || delegate.visualFocus
+            Layout.alignment: Qt.AlignVCenter
+            Layout.leftMargin: VLCStyle.margin_xxsmall
+            font.pixelSize: VLCStyle.icon_small
+            text: VLCIcons.close
+            description: qsTr("Remove from queue")
+            onClicked: {
+                if (delegate.view && delegate.view.model)
+                    delegate.view.model.removeItems([delegate.index])
+            }
         }
     }
 

@@ -92,10 +92,10 @@ QtObject {
 
     readonly property int listAlbumCover_height: MainCtx.dp(32, scale)
     readonly property int listAlbumCover_width: listAlbumCover_height * 16.0/9
-    readonly property int listAlbumCover_radius: MainCtx.dp(3, scale)
+    readonly property int listAlbumCover_radius: MainCtx.dp(6, scale)
     readonly property int trackListAlbumCover_width: MainCtx.dp(32, scale)
     readonly property int trackListAlbumCover_heigth: MainCtx.dp(32, scale)
-    readonly property int trackListAlbumCover_radius: MainCtx.dp(3, scale)
+    readonly property int trackListAlbumCover_radius: MainCtx.dp(6, scale)
 
     readonly property int tableCoverRow_height: Math.max(listAlbumCover_height, fontHeight_normal) + margin_xsmall * 2
     readonly property int tableRow_height: fontHeight_normal + margin_small * 2
@@ -120,7 +120,7 @@ QtObject {
     readonly property int icon_addressBar: icon_normal
     readonly property int icon_actionButton: icon_normal
     readonly property int icon_PIP: icon_normal
-    readonly property int icon_CSD: icon_small
+    readonly property int icon_CSD: icon_normal // Juxtopposed window glyphs are drawn on a 24px grid
     readonly property int icon_playlistArt: MainCtx.dp(32, scale)
 
     readonly property int play_cover_small: MainCtx.dp(24, scale)
@@ -200,10 +200,10 @@ QtObject {
     readonly property int gridCover_music_border: MainCtx.dp(3, scale)
 
     readonly property int gridCover_video_width: colWidth(2)
-    readonly property int gridCover_video_height: ( gridCover_video_width * 10.0 ) / 16
+    readonly property int gridCover_video_height: Math.round(( gridCover_video_width * 9.0 ) / 16)
     readonly property int gridCover_video_border: MainCtx.dp(4, scale)
 
-    readonly property int gridCover_radius: MainCtx.dp(4, scale)
+    readonly property int gridCover_radius: MainCtx.dp(8, scale)
 
     readonly property int expandCover_music_height: MainCtx.dp(171, scale)
     readonly property int expandCover_music_width: MainCtx.dp(171, scale)
@@ -326,6 +326,29 @@ QtObject {
     // Player control layout
     readonly property int controlLayoutHeight: MainCtx.dp(64, scale)
     readonly property int controlLayoutHeightPinned: MainCtx.dp(32, scale)
+
+    // Juxtopposed redesign metrics (Figma "Player" frame, 1x)
+    readonly property int juxtTitleBar_height: MainCtx.dp(40, scale)
+    readonly property int juxtControlBar_height: MainCtx.dp(54, scale)
+    readonly property int juxtControlBar_padding: MainCtx.dp(20, scale)
+    readonly property int playButton_width: MainCtx.dp(54, scale)
+    readonly property int playButton_height: MainCtx.dp(28, scale)
+    readonly property real playButton_radius: MainCtx.dp(6, scale)
+    readonly property int juxtSeek_height: MainCtx.dp(28, scale)
+    readonly property real juxtSeek_radius: MainCtx.dp(6, scale)
+    readonly property int juxtSeekHandle_width: MainCtx.dp(8, scale)
+    readonly property int juxtTime_width: MainCtx.dp(60, scale)
+    readonly property int juxtVolume_width: MainCtx.dp(72, scale)
+    readonly property int juxtStage_inset: MainCtx.dp(10, scale)
+    readonly property real juxtStage_radius: MainCtx.dp(10, scale)
+    readonly property int juxtMiniCard_width: MainCtx.dp(391, scale)
+    readonly property int juxtMiniCard_padding: MainCtx.dp(8, scale)
+    readonly property int juxtMiniCard_margin: MainCtx.dp(12, scale)
+    readonly property int juxtMiniCard_textInset: MainCtx.dp(4, scale)
+    readonly property real juxtMiniCard_mediaRadius: MainCtx.dp(6, scale)
+    readonly property int juxtSideRail_width: MainCtx.dp(50, scale)
+    readonly property int juxtSidePanel_thumb: MainCtx.dp(32, scale)
+    readonly property int juxtSidePanel_padding: MainCtx.dp(10, scale)
 
     // Scroll bar (size means width or height, depending on the orientation):
     readonly property real scrollBarInteractingSize: MainCtx.dp(8, scale)

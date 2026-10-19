@@ -30,11 +30,16 @@ FocusScope {
 
     // Properties
 
-    property real spacing: VLCStyle.margin_normal // spacing between controls
+    property real spacing: VLCStyle.margin_small // spacing between controls
 
-    property real layoutSpacing: VLCStyle.margin_xxlarge // spacing between layouts (left, center, and right)
+    property real layoutSpacing: VLCStyle.margin_normal // spacing between layouts (left, center, and right)
 
     property int identifier: -1
+
+    // Optional item stretched between the left and right controls (used by
+    // the Juxtopposed control bar to put the seek bar in the button row).
+    // Only applies when the center section is empty.
+    property Item fillItem: null
 
     readonly property PlayerControlbarModel model: {
         if (!!MainCtx.controlbarProfileModel.currentModel)
@@ -132,8 +137,34 @@ FocusScope {
                 Layout.minimumWidth: (containsVisibleItem(leftRepeater) && containsVisibleItem(rightRepeater)) ? playerControlLayout.layoutSpacing
                                                                                                                : 0
 
+                id: fillSpacer
+
                 Layout.fillWidth: true
+                Layout.fillHeight: !!playerControlLayout.fillItem
+                Layout.leftMargin: playerControlLayout.fillItem ? (playerControlLayout.layoutSpacing - playerControlLayout.spacing) : 0
+                Layout.rightMargin: Layout.leftMargin
                 visible: true
+
+                Binding {
+                    when: !!playerControlLayout.fillItem
+                    target: playerControlLayout.fillItem
+                    property: "parent"
+                    value: fillSpacer
+                }
+
+                Binding {
+                    when: !!playerControlLayout.fillItem
+                    target: playerControlLayout.fillItem
+                    property: "width"
+                    value: fillSpacer.width
+                }
+
+                Binding {
+                    when: !!playerControlLayout.fillItem
+                    target: playerControlLayout.fillItem
+                    property: "height"
+                    value: fillSpacer.height
+                }
             }
 
             ControlRepeater {

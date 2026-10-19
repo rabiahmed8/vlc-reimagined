@@ -38,21 +38,18 @@ FocusScope {
 
     property bool hasMiniPlayer: miniPlayer.visible
 
-    // NOTE: The main view must be above the indexing bar and the mini player.
-    property real displayMargin: (height - miniPlayer.y) +
-                                 (loaderUpdatePane.active ? loaderUpdatePane.height : 0)
+    // NOTE: The main view must be above the indexing bar.
+    // Juxtopposed: the mini player card floats over the view instead.
+    property real displayMargin: (loaderUpdatePane.active ? loaderUpdatePane.height : 0)
+
+    // Lets the views scroll their last items out from under the mini player card
+    readonly property real contentEndMargin: displayMargin
+                                             + (hasMiniPlayer ? miniPlayer.height + VLCStyle.juxtMiniCard_margin : 0)
 
     //MainDisplay behave as a PageLoader
     property alias pagePrefix: stackView.pagePrefix
 
-    readonly property int positionSliderY: {
-        var size = miniPlayer.y + miniPlayer.sliderY
-
-        if (MainCtx.pinVideoControls)
-            return size - VLCStyle.margin_xxxsmall
-        else
-            return size
-    }
+    readonly property int positionSliderY: miniPlayer.y
 
     property bool _showMiniPlayer: false
 
@@ -77,12 +74,9 @@ FocusScope {
     }
 
     Component.onCompleted: {
-        if (MainCtx.canShowVideoPIP) {
-            pipPlayerComponent.createObject(this)
-        } else {
-            if (MainCtx.hasEmbededVideo)
-                MainPlaylistController.stop()
-        }
+        // Juxtopposed: the mini player card shows the video (when the compositor allows it)
+        if (!MainCtx.canShowVideoPIP && MainCtx.hasEmbededVideo)
+            MainPlaylistController.stop()
 
         if (History.previousEmpty) {
             History.update(["home"])
@@ -207,6 +201,12 @@ FocusScope {
         colorSet: ColorContext.View
     }
 
+    ColorContext {
+        id: chromeTheme
+        palette: VLCStyle.palette
+        colorSet: ColorContext.Window
+    }
+
     Loader {
         id: voronoiSnowLoader
 
@@ -297,6 +297,14 @@ FocusScope {
 
         Navigation.parentItem: g_mainDisplay
 
+        // Juxtopposed: the library content is a rounded panel inset into the
+        // window chrome, so the chrome color shows around it.
+        Rectangle {
+            anchors.fill: parent
+            z: 0
+            color: chromeTheme.bg.primary
+        }
+
         Rectangle {
             id: stackViewParent
 
@@ -312,6 +320,10 @@ FocusScope {
             z: 1
 
             anchors.fill: parent
+            anchors.rightMargin: playlistLoader.shown ? 0 : VLCStyle.juxtStage_inset
+            anchors.bottomMargin: VLCStyle.juxtStage_inset
+
+            radius: VLCStyle.mainView_topLeftRadius
 
             implicitWidth: stackView.implicitWidth
             implicitHeight: stackView.implicitHeight
@@ -320,7 +332,7 @@ FocusScope {
 
             layer.enabled: MainCtx.backdropBlurRequested() &&
                            (GraphicsInfo.shaderType === GraphicsInfo.RhiShader) &&
-                           (miniPlayer.visible || !!loaderUpdatePane.item?.visible)
+                           !!loaderUpdatePane.item?.visible
 
             // Blurring requires to access neighbour pixels, thus the source texture should be bigger than
             // the effect so that the effect have access to the neighbor pixels for the pixels near the
@@ -397,7 +409,7 @@ FocusScope {
                 effectRect: Qt.rect(-stackView.x,
                                     stackView.height - stackViewParent.edgeExtension,
                                     stackViewParent.width + 2 * stackViewParent.edgeExtension,
-                                    loaderUpdatePane.height + miniPlayer.height + 2 * stackViewParent.edgeExtension)
+                                    loaderUpdatePane.height + 2 * stackViewParent.edgeExtension)
 
                 // WARNING: We are not using `sourceVisualRect` because it is not trivial to guarantee that
                 //          the visual (`ShaderEffect`) scene graph sizing and sub-texturing are synchronized.
@@ -507,7 +519,7 @@ FocusScope {
                             // Main pages need to compensate for the mini player:
 
                             if (currentItem.displayMarginEnd !== undefined)
-                                currentItem.displayMarginEnd = Qt.binding(() => { return g_mainDisplay.displayMargin })
+                                currentItem.displayMarginEnd = Qt.binding(() => { return g_mainDisplay.contentEndMargin })
 
                             if (currentItem.enableEndFade !== undefined)
                                 currentItem.enableEndFade = Qt.binding(() => { return (g_mainDisplay.hasMiniPlayer === false) })
@@ -580,7 +592,7 @@ FocusScope {
 
             safeAreaLeftMargin: VLCStyle.applicationHorizontalMargin
 
-            useAcrylic: (VLCStyle.isScreenSmall ? (sidebar.state === "") : true) // See `694d51a7` for the reasoning.
+            useAcrylic: false // Juxtopposed: solid chrome, like the title bar
 
             NavigationBarContextMenu {
                 id: navigationBarContextMenu
@@ -747,6 +759,8 @@ FocusScope {
             sourceComponent: PlaylistPane {
                 id: playlist
 
+                juxtStyle: true
+
                 property int maximumWidth: Math.max(minimumWidth, (g_mainDisplay.width + playqueueResizeHandle.width)
                                                     / (pannelVisiblity.showNavigation ? 3 : 2))
 
@@ -761,7 +775,7 @@ FocusScope {
 
                 useAcrylic: !VLCStyle.isScreenSmall
 
-                view.fadingEdge.pixelAlignedForDPR: !miniPlayer.visible
+                view.fadingEdge.pixelAlignedForDPR: true
 
                 Navigation.parentItem: g_mainDisplay
                 Navigation.upItem: localTopbar
@@ -807,7 +821,7 @@ FocusScope {
 
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: miniPlayer.top
+        anchors.bottom: parent.bottom
 
         readonly property bool updateModelIsAvailable: (typeof UpdateModel !== 'undefined')
 
@@ -883,8 +897,7 @@ FocusScope {
 
             item.leftPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
             item.rightPadding = Qt.binding(function() { return VLCStyle.margin_large + VLCStyle.applicationHorizontalMargin })
-            item.bottomPadding = Qt.binding(function() { return VLCStyle.margin_small + (miniPlayer.visible ? 0
-                                                                                                            : VLCStyle.applicationVerticalMargin) })
+            item.bottomPadding = Qt.binding(function() { return VLCStyle.margin_small + VLCStyle.applicationVerticalMargin })
 
             item.dismissRequested.connect(loaderUpdatePane, loaderUpdatePane.dismiss)
 
@@ -976,61 +989,12 @@ FocusScope {
         }
     }
 
-    Component {
-        id: pipPlayerComponent
-
-        PIPPlayer {
-            id: playerPip
-            anchors {
-                bottom: loaderUpdatePane.top
-                left: parent.left
-                bottomMargin: VLCStyle.margin_normal
-                leftMargin: VLCStyle.margin_normal + VLCStyle.applicationHorizontalMargin
-            }
-
-            width: VLCStyle.dp(320, VLCStyle.scale)
-            height: VLCStyle.dp(180, VLCStyle.scale)
-            z: 4
-            visible: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo
-            enabled: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo
-
-            Binding on visible {
-                id: visibleBinding
-                when: false
-                delayed: true
-                value: g_mainDisplay._showMiniPlayer && MainCtx.hasEmbededVideo
-            }
-
-            Component.onCompleted: {
-                Qt.callLater(() => { visibleBinding.when = true })
-            }
-
-            dragXMin: VLCStyle.applicationHorizontalMargin
-            dragXMax: g_mainDisplay.width - playerPip.width - VLCStyle.applicationHorizontalMargin
-            dragYMin: localTopbar.y + localTopbar.height
-            dragYMax: loaderUpdatePane.y - playerPip.height
-
-            //keep the player visible on resize
-            Connections {
-                target: g_mainDisplay
-                function onWidthChanged() {
-                    if (playerPip.x > playerPip.dragXMax)
-                        playerPip.x = playerPip.dragXMax
-                }
-                function onHeightChanged() {
-                    if (playerPip.y > playerPip.dragYMax)
-                        playerPip.y = playerPip.dragYMax
-                }
-            }
-        }
-    }
-
     Dialogs {
         z: 10
         bgContent: g_mainDisplay
 
         anchors {
-            bottom: miniPlayer.visible ? miniPlayer.top : parent.bottom
+            bottom: parent.bottom
             left: parent.left
             right: parent.right
         }
@@ -1041,26 +1005,26 @@ FocusScope {
         z: 11
 
         anchors {
-            bottom: miniPlayer.top
+            bottom: parent.bottom
             left: parent.left
             right: parent.right
             margins: VLCStyle.margin_large
         }
     }
 
-    MiniPlayer {
+    // Juxtopposed: floating card in the bottom right corner of the library
+    MiniPlayerCard {
         id: miniPlayer
 
-        anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        anchors.bottom: loaderUpdatePane.top
+        anchors.rightMargin: VLCStyle.juxtMiniCard_margin + VLCStyle.applicationHorizontalMargin
+                             + (playlistLoader.visible ? playlistLoader.width : 0)
+        anchors.bottomMargin: VLCStyle.juxtMiniCard_margin + VLCStyle.applicationVerticalMargin
 
-        z: 3
+        z: 4
 
-        horizontalPadding: VLCStyle.applicationHorizontalMargin
-        bottomPadding: VLCStyle.applicationVerticalMargin + VLCStyle.margin_xsmall
-
-        background.visible: !stackViewParent.layer.enabled
+        showVideo: g_mainDisplay._showMiniPlayer
 
         Navigation.parentItem: g_mainDisplay
         Navigation.upItem: loaderUpdatePane

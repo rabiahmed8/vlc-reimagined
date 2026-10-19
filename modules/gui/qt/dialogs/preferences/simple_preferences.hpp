@@ -77,6 +77,9 @@ class QString;
 class QTreeWidgetItem;
 #endif
 
+class QListWidget;
+class QLineEdit;
+
 class SPrefsCatList : public QWidget
 {
     Q_OBJECT
@@ -85,6 +88,8 @@ public:
     virtual ~SPrefsCatList() {}
 private:
     qt_intf_t *p_intf;
+    QListWidget *m_list = nullptr;
+    QLineEdit *m_search = nullptr;
 signals:
     void currentItemChanged( int );
 public slots:

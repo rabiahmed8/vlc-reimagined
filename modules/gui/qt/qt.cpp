@@ -53,6 +53,8 @@ extern "C" char **environ;
 
 #include <QApplication>
 #include <QDate>
+#include <QFont>
+#include <QFontDatabase>
 #include <QMutex>
 #include <QtQuickControls2/QQuickStyle>
 #include <QLoggingCategory>
@@ -261,6 +263,10 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define QT_MENUBAR_TEXT N_( "Show the menu bar" )
 #define QT_MENUBAR_LONGTEXT N_( "This option displays the classic menu bar" )
 
+#define QT_REDESIGN_TEXT N_("Use the redesigned interface")
+#define QT_REDESIGN_LONGTEXT N_("Use the new player centric interface. " \
+    "Disable it to get back the classic interface.")
+
 #define QT_PIN_CONTROLS_TEXT N_("Pin video controls")
 #define QT_PIN_CONTROLS_LONGTEXT N_("Place video controls above and below the video instead of above")
 
@@ -355,6 +361,13 @@ vlc_module_begin ()
 
     add_shortcut("qt")
 
+    add_bool( "qt-redesign", true, QT_REDESIGN_TEXT, QT_REDESIGN_LONGTEXT )
+    /* development helper: opens a window of the redesign at startup
+     * ("settings[:category]", "shortcuts", "network", "playlist", "subtitles[:url]",
+     *  "effects:video", "effects:audio"), for screenshots and testing */
+    add_string( "qt-redesign-open", "", "Redesign window opened at startup", nullptr )
+        change_volatile()
+
     add_bool( "qt-minimal-view", false, QT_MINIMAL_MODE_TEXT,
               nullptr )
 
@@ -427,7 +440,7 @@ vlc_module_begin ()
     add_bool( "qt-embedded-open", false, QT_NATIVEOPEN_TEXT,
                nullptr )
 
-    add_bool( "qt-pin-controls", false, QT_PIN_CONTROLS_TEXT, QT_PIN_CONTROLS_LONGTEXT )
+    add_bool( "qt-pin-controls", true, QT_PIN_CONTROLS_TEXT, QT_PIN_CONTROLS_LONGTEXT )
 
 
     add_obsolete_bool( "qt-advanced-pref" ) /* since 4.0.0 */
@@ -842,6 +855,7 @@ static void *Thread( void *obj )
     Q_INIT_RESOURCE( player_assets );
     Q_INIT_RESOURCE( playercontrols_assets );
     Q_INIT_RESOURCE( playlist_assets );
+    Q_INIT_RESOURCE( redesign_assets );
     Q_INIT_RESOURCE( style_assets );
     Q_INIT_RESOURCE( util_assets );
     Q_INIT_RESOURCE( widgets_assets );
@@ -856,6 +870,7 @@ static void *Thread( void *obj )
     Q_INIT_RESOURCE( player_cachegen );
     Q_INIT_RESOURCE( playercontrols_cachegen );
     Q_INIT_RESOURCE( playlist_cachegen );
+    Q_INIT_RESOURCE( redesign_cachegen );
     Q_INIT_RESOURCE( style_cachegen );
     Q_INIT_RESOURCE( util_cachegen );
     Q_INIT_RESOURCE( widgets_cachegen );
@@ -1283,6 +1298,25 @@ static void *Thread( void *obj )
 
     app.setDesktopFileName( PACKAGE );
 
+    /* Juxtopposed redesign: use the bundled Inter typeface, keeping the
+     * platform font if it cannot be loaded. */
+    {
+        QStringList families;
+        for( const char* weight : { "Regular", "Medium", "SemiBold" } )
+        {
+            const int id = QFontDatabase::addApplicationFont(
+                QStringLiteral( ":/fonts/Inter-%1.ttf" ).arg( QLatin1String( weight ) ) );
+            if( id >= 0 && families.isEmpty() )
+                families = QFontDatabase::applicationFontFamilies( id );
+        }
+        if( !families.isEmpty() )
+        {
+            QFont font = app.font();
+            font.setFamilies( { families.first() } );
+            app.setFont( font );
+        }
+    }
+
     DialogErrorModel::getInstance( p_intf );
     VLCDialogModel::getInstance( p_intf );
 
@@ -1445,7 +1479,6 @@ static void *Thread( void *obj )
 
     /* Last settings */
     app.setQuitOnLastWindowClosed( false );
-    app.setQuitLockEnabled( false );
 
     /* Loads and tries to apply the preferred QStyle */
 #define QTSTYLE_KEY "MainWindow/QtStyle"

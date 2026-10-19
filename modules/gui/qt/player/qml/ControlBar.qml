@@ -34,7 +34,8 @@ T.Pane {
     enum TimeTextPosition {
         Hide,
         AboveSlider,
-        LeftRightSlider
+        LeftRightSlider,
+        Inline // Juxtopposed: time, seek bar and length inside the button row
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
@@ -42,9 +43,17 @@ T.Pane {
     implicitHeight: Math.max(implicitBackgroundHeight + bottomInset,
                              implicitContentHeight + topPadding + bottomPadding)
 
-    topInset: sliderY
+    topInset: _inline ? 0 : sliderY
 
-    bottomPadding: VLCStyle.margin_xsmall
+    // Juxtopposed: the row itself carries the 20px inset (VLCStyle.juxtControlBar_padding)
+    leftPadding: 0
+    rightPadding: 0
+
+    bottomPadding: _inline ? (VLCStyle.juxtControlBar_height - VLCStyle.controlLayoutHeightPinned) / 2
+                           : VLCStyle.margin_xsmall
+    topPadding: _inline ? bottomPadding : 0
+
+    readonly property bool _inline: (textPosition === ControlBar.TimeTextPosition.Inline)
 
     readonly property real sliderY: mapFromItem(contentItem, 0, contentItem.sliderY).y
     property int textPosition: ControlBar.TimeTextPosition.AboveSlider
@@ -102,7 +111,8 @@ T.Pane {
     TextMetrics {
         id: timeTextMetrics
         font.pixelSize: (textPosition === ControlBar.TimeTextPosition.LeftRightSlider) ? VLCStyle.fontSize_small
-                                                                                       : VLCStyle.fontSize_normal
+                      : root._inline ? VLCStyle.fontSize_large
+                                     : VLCStyle.fontSize_normal
         text: {
             // This text metrics is used for both the time and length, as we want them to have the same width.
             // Length might not be reported in some cases, for that reason we should check both and use the bigger one.
@@ -131,7 +141,8 @@ T.Pane {
             T.Label {
                 id: mediaTime
 
-                Layout.preferredWidth: (textPosition === ControlBar.TimeTextPosition.LeftRightSlider) ? timeTextMetrics.width : -1
+                Layout.preferredWidth: (textPosition === ControlBar.TimeTextPosition.LeftRightSlider) ? timeTextMetrics.width
+                                     : root._inline ? Math.max(VLCStyle.juxtTime_width, timeTextMetrics.width) : -1
 
                 text: {
                     const length = Player.length
@@ -156,7 +167,8 @@ T.Pane {
             T.Label {
                 id: mediaRemainingTime
 
-                Layout.preferredWidth: (textPosition === ControlBar.TimeTextPosition.LeftRightSlider) ? timeTextMetrics.width : -1
+                Layout.preferredWidth: (textPosition === ControlBar.TimeTextPosition.LeftRightSlider) ? timeTextMetrics.width
+                                     : root._inline ? Math.max(VLCStyle.juxtTime_width, timeTextMetrics.width) : -1
 
                 readonly property bool showRemainingTime: (MainCtx.showRemainingTime && Player.remainingTime.valid())
 
@@ -217,7 +229,9 @@ T.Pane {
             SliderBar {
                 id: trackPositionSlider
 
-                barHeight: root.sliderHeight
+                barHeight: root._inline ? VLCStyle.juxtSeek_height : root.sliderHeight
+                juxtStyle: root._inline
+                Layout.alignment: Qt.AlignVCenter
 
                 Accessible.role: Accessible.Slider
                 Accessible.name: qsTr("Progress")
@@ -241,7 +255,8 @@ T.Pane {
                 id: bookmarksLoader
 
                 parent: root
-                active: MainCtx.mediaLibraryAvailable
+                // Positioned against the separate slider row, which the inline layout does not have.
+                active: MainCtx.mediaLibraryAvailable && !root._inline
                 source: "qrc:///qt/qml/VLC/MediaLibrary/Bookmarks.qml"
 
                 x: root.leftPadding + trackPositionSlider.x + row2.Layout.leftMargin
@@ -311,15 +326,26 @@ T.Pane {
             Layout.rightMargin: Layout.leftMargin
         }
 
+        RowLayout {
+            id: inlineSeek
+
+            visible: root._inline
+            spacing: VLCStyle.margin_xsmall
+
+            children: root._inline ? [mediaTime, trackPositionSlider, mediaRemainingTime] : []
+        }
+
         PlayerControlLayout {
             id: playerControlLayout
 
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: VLCStyle.margin_large
-            Layout.rightMargin: VLCStyle.margin_large
+            Layout.leftMargin: root._inline ? VLCStyle.juxtControlBar_padding : VLCStyle.margin_large
+            Layout.rightMargin: Layout.leftMargin
 
             identifier: root.identifier
+
+            fillItem: root._inline ? inlineSeek : null
 
             implicitHeight: MainCtx.pinVideoControls ? VLCStyle.controlLayoutHeightPinned
                                                      : VLCStyle.controlLayoutHeight

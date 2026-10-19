@@ -34,7 +34,7 @@ Item {
     // NOTE: That's useful when we want to enforce a cover criteria for the titleDelegate.
     property string criteriaCover: "cover"
 
-    property int fillMode: Image.PreserveAspectFit
+    property int fillMode: Image.PreserveAspectCrop
 
     property int titleCover_width: VLCStyle.trackListAlbumCover_width
     property int titleCover_height: VLCStyle.trackListAlbumCover_heigth

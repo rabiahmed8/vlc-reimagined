@@ -1,4 +1,5 @@
 import os
+import posixpath
 from pathlib import Path
 import sys
 import argparse
@@ -29,7 +30,8 @@ if __name__ == "__main__":
     parser.add_argument("--sources", action='append', default=[], nargs='*', metavar=("CLASS"), help="mark CLASS as a singleton")
 
     args = parser.parse_args()
-    prefix = os.path.join("/", args.prefix, *args.module.split("."))
+    # resource paths always use "/", also on Windows hosts
+    prefix = posixpath.join("/", args.prefix.replace("\\", "/"), *args.module.split("."))
     singletons = [os.path.join(args.srcdir, s) for s in args.singletons[0]]
     files = [os.path.join(args.srcdir, relpath) for relpath in args.sources[0]]
 

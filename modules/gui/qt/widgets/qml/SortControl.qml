@@ -67,6 +67,54 @@ Widgets.IconToolButton {
 
     checked: _menu && _menu.shown
 
+    implicitHeight: VLCStyle.dp(28, VLCStyle.scale)
+    implicitWidth: sortRow.implicitWidth + VLCStyle.dp(18, VLCStyle.scale)
+
+    background: Rectangle {
+        implicitHeight: VLCStyle.dp(28, VLCStyle.scale)
+        radius: VLCStyle.dp(6, VLCStyle.scale)
+        color: (root.checked || root.hovered || root.visualFocus) ? VLCStyle.palette.juxtBgPill : VLCStyle.palette.juxtBgA3
+        border.width: 1
+        border.color: (root.checked || root.visualFocus) ? VLCStyle.palette.orange500 : VLCStyle.palette.juxtDividerDim
+
+        Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+        Behavior on border.color { ColorAnimation { duration: VLCStyle.duration_short } }
+    }
+
+    contentItem: Row {
+        id: sortRow
+        spacing: VLCStyle.dp(6, VLCStyle.scale)
+        anchors.centerIn: parent
+
+        Text {
+            font.family: VLCIcons.fontFamily
+            font.pixelSize: VLCStyle.dp(14, VLCStyle.scale)
+            text: VLCIcons.topbar_sort
+            color: root.checked ? VLCStyle.palette.orange500 : (root.hovered ? VLCStyle.palette.juxtFg1 : VLCStyle.palette.juxtFgA2)
+            anchors.verticalCenter: parent.verticalCenter
+            Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+        }
+
+        Text {
+            font.family: "Inter"
+            font.pixelSize: VLCStyle.fontSize_small
+            font.weight: Font.Medium
+            text: qsTr("Sort")
+            color: (root.hovered || root.checked) ? VLCStyle.palette.juxtFg1 : VLCStyle.palette.juxtFgA2
+            anchors.verticalCenter: parent.verticalCenter
+            Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+        }
+
+        Text {
+            font.family: VLCIcons.fontFamily
+            font.pixelSize: VLCStyle.dp(10, VLCStyle.scale)
+            text: VLCIcons.chevron_down
+            color: root.checked ? VLCStyle.palette.orange500 : VLCStyle.palette.juxtFgA2
+            anchors.verticalCenter: parent.verticalCenter
+            Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+        }
+    }
+
     Keys.priority: Keys.AfterItem
     Keys.onPressed: (event) => Navigation.defaultKeyAction(event)
 

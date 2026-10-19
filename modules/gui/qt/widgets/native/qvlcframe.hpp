@@ -67,6 +67,7 @@ class QVLCTools
        static void restoreWindowPosition(QSettings *settings, QWindow *window,
                                           QSize defSize = QSize( 0, 0 ),
                                           QPoint defPos = QPoint( 0, 0 ) );
+       static void applyJuxtopposedTheme(QWidget *widget);
 };
 
 class QVLCFrame : public QWidget

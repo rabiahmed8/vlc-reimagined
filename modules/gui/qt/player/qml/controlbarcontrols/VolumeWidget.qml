@@ -97,8 +97,48 @@ T.Pane {
         Widgets.SliderExt {
             id: volControl
 
-            // FIXME: use VLCStyle
-            implicitWidth: VLCStyle.dp(100, VLCStyle.scale)
+            implicitWidth: VLCStyle.juxtVolume_width
+            implicitHeight: VLCStyle.juxtSeek_height
+
+            // Juxtopposed volume: a widening wedge whose fill runs through a
+            // green -> orange -> red gradient (red past 100%). The gradient
+            // spans the whole wedge and is revealed up to the current level.
+            background: Item {
+                implicitWidth: VLCStyle.juxtVolume_width
+                implicitHeight: VLCStyle.juxtSeek_height
+
+                x: volControl.leftPadding
+                y: volControl.topPadding + (volControl.availableHeight - height) / 2
+                width: volControl.availableWidth
+                height: implicitHeight
+
+                Image {
+                    anchors.fill: parent
+                    source: "qrc:///juxt/volume_track.svg"
+                    sourceSize: Qt.size(width * 2, height * 2)
+                    smooth: true
+                }
+
+                Item {
+                    id: volumeFillClip
+
+                    x: VLCStyle.dp(1.5, VLCStyle.scale)
+                    y: (parent.height - height) / 2
+                    width: volControl.visualPosition * (parent.width - 2 * x)
+                    height: parent.height * (24.56 / 28)
+                    clip: true
+
+                    Image {
+                        width: volumeFillClip.parent.width - 2 * volumeFillClip.x
+                        height: parent.height
+                        source: "qrc:///juxt/volume_fill.svg"
+                        sourceSize: Qt.size(width * 2, height * 2)
+                        smooth: true
+                    }
+                }
+            }
+
+            handle: Item { }
 
             // WARNING: Directly setting the insets break handle and background positioning.
             Binding on topInset {
@@ -110,8 +150,8 @@ T.Pane {
                 value: VLCStyle.touchHandlerMargin
             }
 
-            Layout.fillHeight: true
-            Layout.margins: VLCStyle.margin_xsmall
+            Layout.alignment: Qt.AlignVCenter
+            Layout.leftMargin: VLCStyle.margin_xsmall
 
             property bool _inhibitPlayerVolumeUpdate: false
 
@@ -248,8 +288,8 @@ T.Pane {
                 // NOTE: This shouldn't be visible when the volume stops before a 100.
                 visible: (root._maxvol > 100)
 
-                // FIXME: tick mark is not visible when it's over slider
-                color: root.sliderColor
+                // A dark notch reads on both the empty and the filled wedge.
+                color: Qt.rgba(0, 0, 0, 0.6)
 
                 // NOTE: This is a helper to select the default volume when clicking on the
                 //       tickmark. We apply a higher clamp value to achieve that behavior on

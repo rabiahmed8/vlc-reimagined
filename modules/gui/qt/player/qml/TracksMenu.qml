@@ -31,6 +31,10 @@ T.Popup {
     id: root
 
     // Settings
+
+    // Juxtopposed: list only the audio tracks (AudioTrackButton)
+    property bool audioOnly: false
+
     property var preferredWidth : stackView.currentItem.preferredWidth
 
     width: Math.min((typeof preferredWidth !== "undefined")
@@ -56,17 +60,10 @@ T.Popup {
     }
 
     background: Rectangle {
-        // NOTE: The opacity should be stronger on a light background for readability.
-        color: popupTheme.bg.primary.alpha(popupTheme.palette.isDark ? 0.8 : 0.96)
-
-        Rectangle {
-            anchors.left: parent.left
-            anchors.right: parent.right
-
-            height: VLCStyle.margin_xxxsmall
-
-            color: popupTheme.border
-        }
+        radius: VLCStyle.dp(8, VLCStyle.scale)
+        color: VLCStyle.palette.juxtBgA3
+        border.width: 1
+        border.color: VLCStyle.palette.juxtDividerDim
     }
 
     contentItem: T.StackView {
@@ -85,6 +82,7 @@ T.Popup {
 
         initialItem: TracksListPage {
             trackMenuController: trackMenuController
+            audioOnly: root.audioOnly
         }
 
         pushEnter: Transition {

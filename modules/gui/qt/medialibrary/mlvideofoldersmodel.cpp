@@ -52,6 +52,7 @@ QHash<int, QByteArray> MLVideoFoldersModel::roleNames() const /* override */
 {
     return {
         { FOLDER_ID, QByteArrayLiteral("id") },
+        { FOLDER_MRL, QByteArrayLiteral("mrl") },
         { FOLDER_TITLE, QByteArrayLiteral("title") },
         { FOLDER_TITLE_FIRST_SYMBOL, QByteArrayLiteral("title_first_symbol") },
         { FOLDER_THUMBNAIL, QByteArrayLiteral("thumbnail") },
@@ -76,6 +77,8 @@ QVariant MLVideoFoldersModel::itemRoleData(const MLItem * item, const int role) 
         case Qt::DisplayRole:
             return QVariant::fromValue(folder->getTitle());
         // NOTE: These are the conditions for QML view(s).
+        case FOLDER_MRL:
+            return folder->getMRL();
         case FOLDER_ID:
             return QVariant::fromValue(folder->getId());
         case FOLDER_TITLE:
@@ -147,6 +150,19 @@ void MLVideoFoldersModel::onVlcMlEvent(const MLEvent & event) /* override */
 // Loader
 size_t MLVideoFoldersModel::Loader::count(vlc_medialibrary_t * ml, const vlc_ml_query_params_t* queryParams) const /* override */
 {
+    if (hierarchical && !m_searchPattern.isEmpty()) {
+        auto all = *queryParams;
+        all.i_offset = 0;
+        all.i_nbResults = 0;
+        return load(ml, &all).size();
+    }
+    if (hierarchical) {
+        if (!m_parent.isValid()) return vlc_ml_count_entry_points(ml, queryParams);
+        size_t result = 0;
+        if (vlc_ml_list(ml, VLC_ML_COUNT_SUBFOLDERS, queryParams, m_parent.id, &result) != VLC_SUCCESS)
+            return 0;
+        return result;
+    }
     return vlc_ml_count_folders_by_type(ml, queryParams, VLC_ML_MEDIA_TYPE_VIDEO);
 }
 
@@ -154,16 +170,32 @@ std::vector<std::unique_ptr<MLItem>>
 MLVideoFoldersModel::Loader::load(vlc_medialibrary_t * ml,
                                   const vlc_ml_query_params_t* queryParams) const /* override */
 {
-    ml_unique_ptr<vlc_ml_folder_list_t> list(vlc_ml_list_folders_by_type(ml, queryParams,
-                                                                         VLC_ML_MEDIA_TYPE_VIDEO));
+    const bool filterLocally = hierarchical && !m_searchPattern.isEmpty();
+    auto all = *queryParams;
+    if (filterLocally) { all.i_offset = 0; all.i_nbResults = 0; }
+    const auto *folderQuery = filterLocally ? &all : queryParams;
+    vlc_ml_folder_list_t *raw = nullptr;
+    if (hierarchical) {
+        if (m_parent.isValid()) {
+            if (vlc_ml_list(ml, VLC_ML_LIST_SUBFOLDERS, folderQuery, m_parent.id, &raw) != VLC_SUCCESS)
+                return {};
+        } else raw = vlc_ml_list_entry_points(ml, folderQuery);
+    } else raw = vlc_ml_list_folders_by_type(ml, queryParams, VLC_ML_MEDIA_TYPE_VIDEO);
+    ml_unique_ptr<vlc_ml_folder_list_t> list(raw);
 
     if (list == nullptr)
         return {};
 
     std::vector<std::unique_ptr<MLItem>> result;
 
+    size_t matched = 0;
     for (const vlc_ml_folder_t & folder : ml_range_iterate<vlc_ml_folder_t>(list))
     {
+        if (filterLocally) {
+            if (!qfu(folder.psz_name).contains(QString::fromUtf8(m_searchPattern), Qt::CaseInsensitive)) continue;
+            if (matched++ < queryParams->i_offset) continue;
+            if (queryParams->i_nbResults && result.size() >= queryParams->i_nbResults) break;
+        }
         result.emplace_back(std::make_unique<MLFolder>(&folder));
     }
 

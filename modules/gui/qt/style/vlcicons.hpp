@@ -106,11 +106,14 @@ class VLCIcons : public QObject {
     Q_PROPERTY(QChar ic_fluent_document_copy_24_regular MEMBER ic_fluent_document_copy_24_regular CONSTANT FINAL)
     Q_PROPERTY(QChar ic_fluent_arrow_download_24_regular MEMBER ic_fluent_arrow_download_24_regular CONSTANT FINAL)
     Q_PROPERTY(QChar ic_fluent_arrow_sync_24_regular MEMBER ic_fluent_arrow_sync_24_regular CONSTANT FINAL)
-    Q_PROPERTY(QChar ic_fluent_folder_open_24_regular MEMBER ic_fluent_folder_open_24_regular CONSTANT FINAL)
     Q_PROPERTY(QChar medialibrary_add MEMBER medialibrary_add CONSTANT FINAL)
     Q_PROPERTY(QChar medialibrary_remove MEMBER medialibrary_remove CONSTANT FINAL)
     Q_PROPERTY(QChar regex MEMBER regex CONSTANT FINAL)
     Q_PROPERTY(QChar ic_fluent_text_change_case_24_regular MEMBER ic_fluent_text_change_case_24_regular CONSTANT FINAL)
+    Q_PROPERTY(QChar folder MEMBER folder CONSTANT FINAL)
+    Q_PROPERTY(QChar lists MEMBER lists CONSTANT FINAL)
+    Q_PROPERTY(QChar artist MEMBER artist CONSTANT FINAL)
+    Q_PROPERTY(QChar popout MEMBER popout CONSTANT FINAL)
 
 
 public:
@@ -213,11 +216,14 @@ public:
     static constexpr inline QChar ic_fluent_document_copy_24_regular{ u'\ue059' };
     static constexpr inline QChar ic_fluent_arrow_download_24_regular{ u'\ue05a' };
     static constexpr inline QChar ic_fluent_arrow_sync_24_regular{ u'\ue05b' };
-    static constexpr inline QChar ic_fluent_folder_open_24_regular{ u'\ue05c' };
-    static constexpr inline QChar medialibrary_add{ u'\ue05d' };
-    static constexpr inline QChar medialibrary_remove{ u'\ue05e' };
-    static constexpr inline QChar regex{ u'\ue05f' };
-    static constexpr inline QChar ic_fluent_text_change_case_24_regular{ u'\ue060' };
+    static constexpr inline QChar medialibrary_add{ u'\ue05c' };
+    static constexpr inline QChar medialibrary_remove{ u'\ue05d' };
+    static constexpr inline QChar regex{ u'\ue05e' };
+    static constexpr inline QChar ic_fluent_text_change_case_24_regular{ u'\ue05f' };
+    static constexpr inline QChar folder{ u'\ue060' };
+    static constexpr inline QChar lists{ u'\ue061' };
+    static constexpr inline QChar artist{ u'\ue062' };
+    static constexpr inline QChar popout{ u'\ue063' };
 
 };
 

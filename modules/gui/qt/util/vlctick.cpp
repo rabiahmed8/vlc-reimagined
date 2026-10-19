@@ -36,7 +36,7 @@ VLCTick::VLCTick(vlc_tick_t ticks)
 
 bool VLCTick::isSubSecond() const
 {
-    return valid() && asMilliseconds() < 1000;
+    return valid() && asMilliseconds() >= 0 && asMilliseconds() < 1000;
 }
 
 bool VLCTick::isSubHour() const
@@ -175,7 +175,7 @@ VLCDuration::VLCDuration()
 
 VLCDuration::VLCDuration(vlc_tick_t t)
     : VLCTick(t)
-    , m_valid(true)
+    , m_valid(t >= 0)
 {
 }
 
@@ -240,6 +240,8 @@ VLCDuration VLCDuration::scale(float scalar) const
 
 VLCDuration VLCDuration::fromMS(int64_t ms)
 {
+    if (ms < 0)
+        return VLCDuration{};
     return VLCDuration(VLC_TICK_FROM_MS(ms));
 }
 

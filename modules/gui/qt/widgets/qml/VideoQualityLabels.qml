@@ -45,22 +45,26 @@ Row {
         delegate: T.Label {
             id: label
 
-            padding: VLCStyle.margin_xxxsmall
+            padding: VLCStyle.margin_xxsmall
+            leftPadding: VLCStyle.margin_xsmall
+            rightPadding: VLCStyle.margin_xsmall
 
             visible: index < root.labels.length
             text: index >= root.labels.length ? "" :  root.labels[index]
 
-            font.pixelSize: VLCStyle.fontSize_normal
+            font.pixelSize: VLCStyle.fontSize_small
+            font.weight: Font.Medium
 
             horizontalAlignment: Text.AlignRight
 
-            color: theme.fg.primary
+            color: VLCStyle.palette.juxtFgA1
 
             background: Rectangle {
                 anchors.fill: label
-                color: theme.bg.primary
-                opacity: 0.5
-                radius: VLCStyle.dp(3, VLCStyle.scale)
+                color: Qt.rgba(0, 0, 0, 0.75)
+                border.color: VLCStyle.palette.juxtDividerBright
+                border.width: 1
+                radius: VLCStyle.dp(4, VLCStyle.scale)
             }
 
             Accessible.ignored: true

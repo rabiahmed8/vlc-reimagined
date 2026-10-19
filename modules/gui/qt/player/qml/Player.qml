@@ -181,7 +181,9 @@ FocusScope {
         objectName: "playerSpecializationLoader"
 
         anchors {
-            left: parent.left
+            // Juxtopposed: the side panel pushes the video stage to the right
+            left: (MainCtx.hasEmbededVideo && rootPlayer._controlsUnderVideo && playlistpopup.visible) ? playlistpopup.right
+                                                                                                       : parent.left
             right: parent.right
             top: (MainCtx.hasEmbededVideo && rootPlayer._controlsUnderVideo) ? topBar.bottom : parent.top
             bottom: (MainCtx.hasEmbededVideo && rootPlayer._controlsUnderVideo) ? controlBar.top : parent.bottom
@@ -1037,10 +1039,11 @@ FocusScope {
             top: (rootPlayer._controlsUnderVideo) ? topBar.bottom
                                                   : parent.top
 
-            right: parent.right
-            bottom: parent.bottom
+            // Juxtopposed: side panel on the left, above the control bar
+            left: parent.left
+            bottom: (rootPlayer._controlsUnderVideo) ? controlBar.top : parent.bottom
 
-            bottomMargin: parent.height - rootPlayer.positionSliderY
+            bottomMargin: (rootPlayer._controlsUnderVideo) ? 0 : parent.height - rootPlayer.positionSliderY
         }
 
         focus: false
@@ -1104,14 +1107,18 @@ FocusScope {
             height: playlistpopup.height
 
             useAcrylic: false
+            juxtStyle: true
             focus: true
 
             wheelEnabled: true
 
-            rightPadding: VLCStyle.applicationHorizontalMargin
+            // Juxtopposed: the icon rail sits in the left inset of the pane
+            leftInset: sideRail.width
+            leftPadding: sideRail.width + VLCStyle.juxtSidePanel_padding
+            rightPadding: VLCStyle.juxtSidePanel_padding
             topPadding:  {
                 if (rootPlayer._controlsUnderVideo)
-                    return VLCStyle.margin_normal
+                    return VLCStyle.juxtSidePanel_padding * 2
                 else
                     // NOTE: We increase the padding accordingly to avoid overlapping the TopBar.
                     return topBar.reservedHeight
@@ -1119,7 +1126,17 @@ FocusScope {
             bottomPadding: 0
 
             background: Rectangle {
-                color: windowTheme.bg.primary.alpha(0.8)
+                color: playlistView.colorContext.bg.primary.alpha(0.95)
+            }
+
+            SidePanelRail {
+                id: sideRail
+
+                parent: playlistView
+
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
             }
 
             view.fadingEdge.pixelAlignedForDPR: !controlBar.visible
@@ -1127,7 +1144,7 @@ FocusScope {
             Navigation.parentItem: rootPlayer
             Navigation.upItem: topBar
             Navigation.downItem: Player.isInteractive ? toggleControlBarButton : controlBar
-            Navigation.leftAction: closePlaylist
+            Navigation.rightAction: closePlaylist
             Navigation.cancelAction: closePlaylist
 
             function closePlaylist() {
@@ -1149,10 +1166,10 @@ FocusScope {
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
-                    left: parent.left
+                    right: parent.right
                 }
 
-                atRight: false
+                atRight: true
                 currentWidth: playlistpopup.width
 
                 maximumWidth: playlistView.maximumWidth

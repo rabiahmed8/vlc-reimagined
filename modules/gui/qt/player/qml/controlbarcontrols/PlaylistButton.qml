@@ -27,7 +27,7 @@ import VLC.Util
 Widgets.IconToolButton {
     id: playlistBtn
 
-    text: VLCIcons.playlist
+    text: VLCIcons.lists
     onClicked: {
         MainCtx.playqueuePanel.visible = !MainCtx.playqueuePanel.visible
         if (MainCtx.playqueuePanel.visible && MainCtx.playqueuePanel.docked) {

@@ -60,8 +60,8 @@ StateGroup {
                 NumberAnimation {
                     property: "opacity"
 
-                    duration: VLCStyle.duration_long
-                    easing.type: Easing.InSine
+                    duration: 350
+                    easing.type: Easing.InOutQuad
                 }
 
                 PropertyAction {
@@ -80,8 +80,8 @@ StateGroup {
                 NumberAnimation {
                     property: "opacity"
 
-                    duration: VLCStyle.duration_long
-                    easing.type: Easing.OutSine
+                    duration: 250
+                    easing.type: Easing.InOutQuad
                 }
             }
         }

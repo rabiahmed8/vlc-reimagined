@@ -38,6 +38,10 @@ T.Pane {
 
     property bool useAcrylic: true
 
+    // Juxtopposed: the player side panel's header (title with more and pop out
+    // buttons, then the item count with sort and search) and compact rows
+    property bool juxtStyle: false
+
     readonly property real minimumWidth: contentItem.Layout.minimumWidth +
                                          leftPadding +
                                          rightPadding +
@@ -147,8 +151,32 @@ T.Pane {
 
                     text: qsTr("Play Queue")
                     color: theme.fg.primary
-                    font.weight: Font.Bold
-                    font.pixelSize: VLCStyle.dp(24, VLCStyle.scale)
+                    font.weight: root.juxtStyle ? Font.Normal : Font.Bold
+                    font.pixelSize: VLCStyle.dp(root.juxtStyle ? 16 : 24, VLCStyle.scale)
+                }
+
+                Widgets.IconToolButton {
+                    id: moreButton
+
+                    visible: root.juxtStyle
+
+                    font.pixelSize: VLCStyle.icon_normal
+                    text: VLCIcons.more
+                    description: qsTr("More")
+
+                    onClicked: contextMenu.popup(-1, mapToGlobal(0, height))
+                }
+
+                Widgets.IconToolButton {
+                    id: popoutButton
+
+                    visible: root.juxtStyle
+
+                    font.pixelSize: VLCStyle.icon_normal
+                    text: VLCIcons.popout
+                    description: qsTr("Open in a separate window")
+
+                    onClicked: MainCtx.playqueuePanel.docked = false
                 }
 
                 Widgets.SortControl {
@@ -226,30 +254,58 @@ T.Pane {
                 }
             }
 
-            Widgets.CaptionLabel {
-                color: theme.fg.secondary
-                visible: listView.count !== 0
-                text: {
-                    if (listView.count <= 0)
-                        return "" // Not visible otherwise
+            RowLayout {
+                id: countRow
 
-                    let duration
-                    const model = listView.model
-                    if (model instanceof PlaylistListModel) {
-                        duration = model.duration
-                    } else {
-                        // Proxy model, we need to use `QAbstractItemModel` api:
+                anchors.left: parent.left
+                anchors.right: parent.right
 
-                        duration = []
-                        for (let i = 0; i < listView.count; ++i) {
-                            const itemDuration = model.data(model.index(i, 0), PlaylistListModel.DurationRole)
-                            console.assert(itemDuration !== undefined && itemDuration !== null) // typeof `vlcDuration`
-                            duration.push(itemDuration)
-                        }
-                        duration = duration[0].sum(duration)
+                visible: root.juxtStyle || (listView.count !== 0)
+
+                spacing: VLCStyle.margin_normal
+
+                // Juxtopposed: sort and search sit next to the item count
+                Component.onCompleted: {
+                    if (root.juxtStyle) {
+                        sort.parent = countRow
+                        searchBox.parent = countRow
                     }
+                }
 
-                    return qsTr("%1 elements, %2").arg(listView.count).arg(duration.formatLong())
+                Widgets.CaptionLabel {
+                    id: countLabel
+
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: implicitWidth
+
+                    color: theme.fg.secondary
+                    visible: listView.count !== 0
+                    font.pixelSize: root.juxtStyle ? VLCStyle.fontSize_large : VLCStyle.fontSize_normal
+                    text: {
+                        if (listView.count <= 0)
+                            return "" // Not visible otherwise
+
+                        if (root.juxtStyle)
+                            return qsTr("%1 item", "%1 items", listView.count).arg(listView.count)
+
+                        let duration
+                        const model = listView.model
+                        if (model instanceof PlaylistListModel) {
+                            duration = model.duration
+                        } else {
+                            // Proxy model, we need to use `QAbstractItemModel` api:
+
+                            duration = []
+                            for (let i = 0; i < listView.count; ++i) {
+                                const itemDuration = model.data(model.index(i, 0), PlaylistListModel.DurationRole)
+                                console.assert(itemDuration !== undefined && itemDuration !== null) // typeof `vlcDuration`
+                                duration.push(itemDuration)
+                            }
+                            duration = duration[0].sum(duration)
+                        }
+
+                        return qsTr("%1 elements, %2").arg(listView.count).arg(duration.formatLong())
+                    }
                 }
             }
         }
@@ -260,8 +316,21 @@ T.Pane {
             implicitHeight: VLCStyle.margin_xsmall
         }
 
+        Rectangle {
+            // Juxtopposed: divider between the header and the list
+            visible: root.juxtStyle
+
+            Layout.fillWidth: true
+            Layout.leftMargin: VLCStyle.margin_normal
+            Layout.rightMargin: VLCStyle.margin_normal
+            Layout.bottomMargin: VLCStyle.margin_normal
+
+            implicitHeight: VLCStyle.border
+            color: theme.separator
+        }
+
         RowLayout {
-            visible: listView.count !== 0
+            visible: (listView.count !== 0) && !root.juxtStyle
 
             Layout.fillHeight: false
             Layout.leftMargin: VLCStyle.margin_normal
@@ -500,6 +569,8 @@ T.Pane {
             delegate: PlaylistDelegate {
                 id: delegate
 
+                juxtStyle: root.juxtStyle
+
                 width: listView.contentWidth
                 rightPadding: Math.max(listView.T.ScrollBar.vertical.width, VLCStyle.margin_normal)
 
@@ -613,6 +684,48 @@ T.Pane {
                     color: label.color
 
                     font.pixelSize: VLCStyle.fontSize_large
+                }
+
+                Item {
+                    width: 1
+                    height: VLCStyle.margin_normal
+                }
+
+                Widgets.ButtonExt {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: qsTr("Add Media")
+                    iconTxt: VLCIcons.add
+                    onClicked: DialogsProvider.simpleOpenDialog(false)
+                }
+            }
+
+            DropArea {
+                id: emptyDropArea
+                anchors.fill: parent
+                enabled: listView.count === 0
+
+                onEntered: (drag) => {
+                    if (listView.isDropAcceptableFunc(drag, 0)) {
+                        drag.accept()
+                    } else {
+                        drag.accepted = false
+                    }
+                }
+
+                onDropped: (drop) => {
+                    listView.acceptDropFunc(0, drop)
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: VLCStyle.margin_normal
+                    radius: VLCStyle.dp(10, VLCStyle.scale)
+                    color: emptyDropArea.containsDrag ? Qt.rgba(211/255, 121/255, 24/255, 0.08) : "transparent"
+                    border.width: emptyDropArea.containsDrag ? 2 : 0
+                    border.color: VLCStyle.palette.orange500
+                    visible: emptyDropArea.containsDrag
+
+                    Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
                 }
             }
         }

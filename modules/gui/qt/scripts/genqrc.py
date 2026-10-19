@@ -1,4 +1,5 @@
 import os
+import posixpath
 from pathlib import Path
 import sys
 import argparse
@@ -26,7 +27,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     files = [os.path.join(args.srcdir, relpath) for relpath in args.sources[0]]
-    prefix = os.path.join("/", args.prefix)
+    # resource paths always use "/", also on Windows hosts
+    prefix = posixpath.join("/", args.prefix.replace("\\", "/"))
 
     #ensure outdir exists
     os.makedirs(os.path.dirname(args.output), exist_ok=True)

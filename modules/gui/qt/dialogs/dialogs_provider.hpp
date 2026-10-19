@@ -216,6 +216,8 @@ public slots:
                                               const QMessageBox::StandardButton defaultButton = QMessageBox::NoButton,
                                               const QMessageBox::Icon icon = QMessageBox::NoIcon);
     void prefsDialog();
+    /// the classic preferences dialog, also reachable from the redesigned settings
+    void classicPrefsDialog();
     void firstRunDialog();
     void extendedDialog();
     void synchroDialog();
@@ -287,6 +289,12 @@ public:
 
 signals:
     void releaseMouseEvents();
+    /// emitted instead of showing the classic QMenu when the redesigned
+    /// interface is active, the QML side draws its own context menu
+    void contextMenuRequested(bool show);
+    /// emitted by prefsDialog() instead of opening the classic preferences
+    /// when the redesigned interface is active (it has its own settings window)
+    void redesignSettingsRequested();
     void showToolbarEditorDialog();
 
     //visiblity signal

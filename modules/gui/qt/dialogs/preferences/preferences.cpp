@@ -99,7 +99,7 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
 
     /* Simple view (panel) */
     simple_split_widget = new QWidget();
-    simple_split_widget->setLayout( new QVBoxLayout );
+    simple_split_widget->setLayout( new QHBoxLayout );
 
     simple_tree_panel = new QWidget;
     simple_tree_panel->setLayout( new QVBoxLayout );
@@ -182,6 +182,45 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
     BUTTONACT( all, &PrefsDialog::setAdvanced );
     BUTTONACT( expert, &PrefsDialog::setExpert );
 
+    /* Juxtopposed redesign: dark card styling for the settings dialog. */
+    {
+        QPalette juxtPalette = palette();
+        juxtPalette.setColor( QPalette::Window, QColor( "#1B1B1B" ) );
+        juxtPalette.setColor( QPalette::Base, QColor( "#0E0E0E" ) );
+        juxtPalette.setColor( QPalette::AlternateBase, QColor( "#161616" ) );
+        juxtPalette.setColor( QPalette::WindowText, QColor( "#969696" ) );
+        juxtPalette.setColor( QPalette::Text, QColor( "#D8D8D8" ) );
+        juxtPalette.setColor( QPalette::Button, QColor( "#262626" ) );
+        juxtPalette.setColor( QPalette::ButtonText, QColor( "#D8D8D8" ) );
+        juxtPalette.setColor( QPalette::Highlight, QColor( "#D37918" ) );
+        juxtPalette.setColor( QPalette::HighlightedText, QColor( "#161616" ) );
+        setPalette( juxtPalette );
+        setStyleSheet( QStringLiteral(
+            "QGroupBox { background-color: #161616; border: 1px solid #232323; border-radius: 10px; margin-top: 18px; padding: 12px; }"
+            "QGroupBox::title { subcontrol-origin: margin; left: 14px; padding: 0 6px; color: #A0A0A0; background-color: transparent; }"
+            "QPushButton { background-color: #262626; border: 1px solid #333333; border-radius: 8px; padding: 5px 14px; }"
+            "QPushButton:hover { background-color: #303030; }"
+            "QPushButton:default { background-color: #D37918; border-color: #D37918; color: #161616; }"
+            "QComboBox, QLineEdit, QSpinBox, QDoubleSpinBox { background-color: #1B1B1B; border: 1px solid #373737; border-radius: 8px; padding: 4px 8px; }"
+            "QCheckBox::indicator { width: 16px; height: 16px; border-radius: 5px; border: 1px solid #373737; background: #1B1B1B; }"
+            "QCheckBox::indicator:checked { background: #D37918; border-color: #D37918; }"
+            "QToolButton { border-radius: 8px; padding: 4px; }"
+            "QToolButton:checked { background: #262626; }"
+            "QRadioButton::indicator { width: 14px; height: 14px; border-radius: 7px; border: 1px solid #373737; background: #1B1B1B; }"
+            "QRadioButton::indicator:checked { border: 4px solid #D37918; background: #1B1B1B; }"
+            "QToolButton#themeSegment { background: #161616; border: 1px solid #232323; border-radius: 8px; color: #8F8F8F; padding: 6px 18px; }"
+            "QToolButton#themeSegment:hover { background: #1F1F1F; }"
+            "QToolButton#themeSegment:checked { background: #262626; border: 1px solid #D37918; color: #E6E6E6; }"
+            "QListWidget#juxtPrefsList { background: transparent; border: none; }"
+            "QListWidget#juxtPrefsList::item { border-radius: 8px; padding: 6px 8px; color: #8F8F8F; }"
+            "QListWidget#juxtPrefsList::item:selected { background: #262626; color: #D8D8D8; }"
+            "QListWidget#juxtPrefsList::item:hover { background: #222222; }"
+            "QLineEdit#juxtPrefsSearch { background: #161616; border: 1px solid #232323; border-radius: 10px; padding: 8px 10px; }"
+        ) );
+    }
+
+    /* Juxtopposed: the sidebar takes width away from the panels */
+    setMinimumWidth( 1080 );
     QVLCTools::restoreWidgetPosition( p_intf, "Preferences", this, QSize( 850, 700 ) );
 }
 

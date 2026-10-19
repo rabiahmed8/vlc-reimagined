@@ -268,10 +268,10 @@ T.ItemDelegate {
         y: - selectedBorderWidth
 
         enabled: theme.initialized
+        radius: VLCStyle.gridCover_radius + VLCStyle.dp(4, VLCStyle.scale)
 
-        //don't show the backgroud unless selected
-        color: root.selected ?  theme.bg.highlight : theme.bg.primary
-        border.color: visualFocus ? theme.visualFocus : Qt.alpha(theme.visualFocus, 0.0)
+        color: root.selected ? theme.bg.highlight : (root.hovered ? VLCStyle.palette.juxtBgA5 : theme.bg.primary)
+        border.color: root.selected ? VLCStyle.palette.orange500 : (visualFocus ? theme.visualFocus : (root.hovered ? VLCStyle.palette.juxtDividerDim : Qt.alpha(theme.visualFocus, 0.0)))
     }
 
     contentItem: ColumnLayout {

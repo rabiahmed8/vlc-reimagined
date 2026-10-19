@@ -30,7 +30,18 @@ class MLFolder;
 class MLVideoFoldersModel : public MLBaseModel
 {
     Q_OBJECT
+    Q_PROPERTY(bool hierarchical READ hierarchical WRITE setHierarchical NOTIFY hierarchicalChanged FINAL)
 
+public:
+    bool hierarchical() const { return m_hierarchical; }
+    void setHierarchical(bool value) {
+        if (m_hierarchical == value) return;
+        m_hierarchical = value;
+        emit hierarchicalChanged();
+        emit resetRequested();
+    }
+signals:
+    void hierarchicalChanged();
 public:
     enum Roles
     {
@@ -40,7 +51,8 @@ public:
         FOLDER_THUMBNAIL,
         FOLDER_DURATION,
         FOLDER_COUNT,
-        FOLDER_NB_VIDEOS
+        FOLDER_NB_VIDEOS,
+        FOLDER_MRL
     };
 
 public:
@@ -60,9 +72,12 @@ protected: // MLBaseModel reimplementation
     void onVlcMlEvent(const MLEvent & event) override;
 
 private:
+    bool m_hierarchical = false;
     struct Loader : public MLListCacheLoader::MLOp
     {
-        using MLListCacheLoader::MLOp::MLOp;
+        explicit Loader(const MLVideoFoldersModel &model)
+            : MLListCacheLoader::MLOp(model), hierarchical(model.hierarchical()) {}
+        bool hierarchical;
         size_t count(vlc_medialibrary_t * ml, const vlc_ml_query_params_t* queryParams) const override;
 
         std::vector<std::unique_ptr<MLItem>> load(vlc_medialibrary_t * ml,

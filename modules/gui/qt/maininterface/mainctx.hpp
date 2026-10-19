@@ -286,6 +286,9 @@ public:
 
     Q_INVOKABLE static inline void setCursor(Qt::CursorShape cursor) { QApplication::setOverrideCursor(QCursor(cursor)); }
     Q_INVOKABLE static inline void restoreCursor(void) { QApplication::restoreOverrideCursor(); }
+    // global position of the mouse cursor, for items that get no hover events
+    // (e.g. over the video surface)
+    Q_INVOKABLE static inline QPoint cursorPos() { return QCursor::pos(); }
 
     Q_INVOKABLE static inline void setCursor(QQuickItem* item, Qt::CursorShape cursor) { assert(item); item->setCursor(cursor); }
     Q_INVOKABLE static inline void unsetCursor(QQuickItem* item) { assert(item); item->unsetCursor(); };

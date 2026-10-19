@@ -209,11 +209,16 @@ T.Control {
         }
     }
 
-    background: AnimatedBackground {
-        animationDuration: VLCStyle.duration_short
-        enabled: theme.initialized
-        color: delegate.selected ? theme.bg.highlight : theme.bg.primary
-        border.color: visualFocus ? theme.visualFocus : Qt.alpha(theme.visualFocus, 0.0)
+    background: Rectangle {
+        radius: VLCStyle.dp(6, VLCStyle.scale)
+        color: delegate.selected ? VLCStyle.palette.juxtBgPill
+                                 : (delegate.hovered ? VLCStyle.palette.juxtBgA5 : "transparent")
+        border.width: 1
+        border.color: delegate.selected ? VLCStyle.palette.orange500
+                                        : (delegate.visualFocus ? VLCStyle.palette.juxtDividerBright : (delegate.hovered ? VLCStyle.palette.juxtDividerDim : "transparent"))
+
+        Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+        Behavior on border.color { ColorAnimation { duration: VLCStyle.duration_short } }
     }
 
     contentItem: Row {

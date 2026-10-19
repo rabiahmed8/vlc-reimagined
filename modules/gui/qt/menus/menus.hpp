@@ -39,6 +39,7 @@ public:
     explicit VLCMenu(qt_intf_t* p_intf) : QMenu()
     {
         assert(p_intf);
+        QVLCTools::applyJuxtopposedTheme(this);
         if (isWindow())
         {
             QVLCDialog::setWindowTransientParent(this, nullptr, p_intf);
@@ -53,6 +54,7 @@ public:
     explicit VLCMenu(const QString &title, QWidget *parent) : QMenu(title, parent)
     {
         assert(parent); // use VLCMenu(qt_intf_t* p_intf) if parent is null pointer
+        QVLCTools::applyJuxtopposedTheme(this);
     }
 };
 

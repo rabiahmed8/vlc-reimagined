@@ -8,27 +8,105 @@ import VLC.Menus
 NavigableRow {
     id: root
 
-    spacing: VLCStyle.margin_normal
-    enabled: gridListBtn.visible || sortControl.visible || searchBox.visible
+    spacing: VLCStyle.dp(8, VLCStyle.scale)
+    enabled: viewModeSegment.visible || sortControl.visible || searchBox.visible
 
     property SortMenu sortMenu: null
     required property SortCtx sort
     required property SearchCtx search
 
-
-    //TODO: visible value of root.sort.available and MainCtx.hasGridListMode is initialised correctly but on first load still shows up
-    IconToolButton {
-        id: gridListBtn
+    Rectangle {
+        id: viewModeSegment
 
         visible: MainCtx.hasGridListMode
-
         enabled: visible
-        width: VLCStyle.bannerButton_width
-        height: VLCStyle.bannerButton_height
-        font.pixelSize: VLCStyle.icon_banner
-        text: MainCtx.gridView ? VLCIcons.list : VLCIcons.grid
-        description: qsTr("List/Grid")
-        onClicked: MainCtx.gridView = !MainCtx.gridView
+
+        implicitWidth: viewRow.implicitWidth + VLCStyle.dp(6, VLCStyle.scale)
+        implicitHeight: VLCStyle.dp(28, VLCStyle.scale)
+        radius: VLCStyle.dp(6, VLCStyle.scale)
+
+        color: VLCStyle.palette.juxtBgA3
+        border.width: 1
+        border.color: VLCStyle.palette.juxtDividerDim
+
+        Row {
+            id: viewRow
+            anchors.centerIn: parent
+            spacing: VLCStyle.dp(2, VLCStyle.scale)
+
+            Item {
+                id: gridBtn
+                implicitWidth: VLCStyle.dp(28, VLCStyle.scale)
+                implicitHeight: VLCStyle.dp(24, VLCStyle.scale)
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: VLCStyle.dp(4, VLCStyle.scale)
+                    color: MainCtx.gridView ? VLCStyle.palette.juxtBgPill : (gridHover.hovered ? "#222222" : "transparent")
+                    Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        font.family: VLCIcons.fontFamily
+                        font.pixelSize: VLCStyle.dp(15, VLCStyle.scale)
+                        text: VLCIcons.grid
+                        color: MainCtx.gridView ? VLCStyle.palette.orange500 : (gridHover.hovered ? VLCStyle.palette.juxtFg1 : VLCStyle.palette.juxtFgA2)
+                        Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+                    }
+                }
+
+                HoverHandler {
+                    id: gridHover
+                }
+
+                TapHandler {
+                    onTapped: MainCtx.gridView = true
+                }
+
+                Accessible.role: Accessible.Button
+                Accessible.name: qsTr("Grid view")
+            }
+
+            Rectangle {
+                width: 1
+                height: VLCStyle.dp(14, VLCStyle.scale)
+                anchors.verticalCenter: parent.verticalCenter
+                color: VLCStyle.palette.juxtDividerDim
+            }
+
+            Item {
+                id: listBtn
+                implicitWidth: VLCStyle.dp(28, VLCStyle.scale)
+                implicitHeight: VLCStyle.dp(24, VLCStyle.scale)
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: VLCStyle.dp(4, VLCStyle.scale)
+                    color: !MainCtx.gridView ? VLCStyle.palette.juxtBgPill : (listHover.hovered ? "#222222" : "transparent")
+                    Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        font.family: VLCIcons.fontFamily
+                        font.pixelSize: VLCStyle.dp(15, VLCStyle.scale)
+                        text: VLCIcons.list
+                        color: !MainCtx.gridView ? VLCStyle.palette.orange500 : (listHover.hovered ? VLCStyle.palette.juxtFg1 : VLCStyle.palette.juxtFgA2)
+                        Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+                    }
+                }
+
+                HoverHandler {
+                    id: listHover
+                }
+
+                TapHandler {
+                    onTapped: MainCtx.gridView = false
+                }
+
+                Accessible.role: Accessible.Button
+                Accessible.name: qsTr("List view")
+            }
+        }
     }
 
     SortControl {
@@ -36,9 +114,7 @@ NavigableRow {
 
         visible: root.sort.available
         enabled: visible
-        width: VLCStyle.bannerButton_width
-        height: VLCStyle.bannerButton_height
-        font.pixelSize: VLCStyle.icon_banner
+        height: VLCStyle.dp(28, VLCStyle.scale)
         description: qsTr("Sort")
 
         model: root.sort.model
@@ -61,8 +137,8 @@ NavigableRow {
 
         //TODO: initialise visible value with MainCtx
         visible: root.search.available
-        height: VLCStyle.bannerButton_height
-        buttonWidth: VLCStyle.bannerButton_width
+        height: VLCStyle.dp(28, VLCStyle.scale)
+        buttonWidth: VLCStyle.dp(28, VLCStyle.scale)
 
         Binding {
             target: root.search

@@ -67,18 +67,8 @@ T.Button {
             anchors.centerIn: parent
             text: control.iconTxt
 
-            font.family:{
-                if (MainCtx.osName === MainCtx.Windows)
-                {
-                    if(MainCtx.osVersion === 10)
-                        return "Segoe MDL2 Assets"
-
-                    else if(MainCtx.osVersion >= 11)
-                        return "Segoe Fluent Icons"
-                }
-     
-                return VLCIcons.fontFamily
-            }
+            // Juxtopposed: the redesign's window glyphs (see CSDWindowButtonSet.useWinIcons)
+            font.family: VLCIcons.fontFamily
 
             font.pixelSize: VLCStyle.icon_CSD
             color: control.color

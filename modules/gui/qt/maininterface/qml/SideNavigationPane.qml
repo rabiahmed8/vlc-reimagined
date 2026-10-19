@@ -32,6 +32,9 @@ T.Pane {
 
     signal itemClicked(uri : var, item : Item)
 
+
+
+
     //safe area margins for delegate content,
     //so the background of the delegates fills the available space
     //but the content remains within the safe area
@@ -88,9 +91,8 @@ T.Pane {
         }
     }
 
-    background: Widgets.AcrylicBackground {
-        enabled: root.useAcrylic
-        tintColor: theme.bg.primary
+    background: Rectangle {
+        color: root.useAcrylic ? theme.bg.primary : theme.bg.secondary
     }
 
     contentItem:  Item {

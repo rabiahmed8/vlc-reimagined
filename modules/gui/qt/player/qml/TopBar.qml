@@ -63,7 +63,19 @@ FocusScope{
 
     property bool _showCenterText: (pinControls && showToolbar === false && showCSD)
 
-    readonly property int _sideMargin: VLCStyle.margin_small + sideMargin
+    readonly property int _sideMargin: VLCStyle.margin_normal // Juxtopposed: 16px inset, Figma title bar
+
+    // Library page the player was opened from, shown as the folder breadcrumb.
+    readonly property string _libraryName: {
+        const path = History.viewPath
+        switch (path.length > 0 ? path[0] : "") {
+        case "video": return qsTr("Videos")
+        case "music": return qsTr("Music")
+        case "network": return qsTr("Browse")
+        case "discover": return qsTr("Discover")
+        default: return qsTr("Home")
+        }
+    }
 
     // Aliases
 
@@ -262,6 +274,8 @@ FocusScope{
 
         onImplicitHeightChanged: root._layout()
 
+        // Juxtopposed title bar: cone, menu, side panel toggle, then a folder
+        // breadcrumb leading back to the library.
         Item {
             id: logoGroup
 
@@ -269,39 +283,118 @@ FocusScope{
 
             visible: (root._showTopBar && root.resumeVisible === false)
 
-            implicitHeight: VLCStyle.icon_banner + VLCStyle.margin_xxsmall * 2
-            implicitWidth: backBtn.implicitWidth + logo.implicitWidth + VLCStyle.margin_xxsmall
+            implicitHeight: root.pinControls ? VLCStyle.juxtTitleBar_height
+                                             : VLCStyle.icon_banner + VLCStyle.margin_xxsmall * 2
+            implicitWidth: logoRow.implicitWidth
 
-            Widgets.IconToolButton {
-                id: backBtn
+            Row {
+                id: logoRow
 
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
                 anchors.left: parent.left
 
-                objectName: "IconToolButton"
-                font.pixelSize: VLCStyle.icon_banner
-                text: VLCIcons.back
-                description: qsTr("Back")
+                spacing: VLCStyle.margin_xsmall
 
-                AccessibleCompat.id: "topBarBackButton"
+                Widgets.BannerCone {
+                    id: logo
 
-                focus: true
+                    anchors.verticalCenter: parent.verticalCenter
 
-                Navigation.parentItem: root
-                Navigation.rightItem: menuSelector
-                onClicked: root.backRequested()
+                    color: theme.accent
+                }
 
-                onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
-            }
+                Widgets.IconToolButton {
+                    id: menuSelector
 
-            Widgets.BannerCone {
-                id: logo
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: !root.showToolbar
+                    enabled: visible
+                    font.pixelSize: VLCStyle.icon_normal
 
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: backBtn.right
-                anchors.leftMargin: VLCStyle.margin_xxsmall
+                    text: VLCIcons.more
+                    description: qsTr("Menu")
 
-                color: theme.accent
+                    AccessibleCompat.id: "topBarMenuButton"
+
+                    checked: contextMenu.shown
+
+                    Navigation.parentItem: root
+                    Navigation.rightItem: sidebarButton
+
+                    onClicked: contextMenu.popup(this.mapToGlobal(0, height))
+
+                    onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
+
+                    Menus.QmlGlobalMenu {
+                        id: contextMenu
+
+                        ctx: MainCtx
+
+                        onAboutToShow: root.requestLockUnlockAutoHide(true)
+                        onAboutToHide: root.requestLockUnlockAutoHide(false)
+                    }
+
+                    Connections {
+                        target: root
+
+                        function onForceUnlock() {
+                            contextMenu.close()
+                        }
+                    }
+                }
+
+                Widgets.IconToolButton {
+                    id: sidebarButton
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    font.pixelSize: VLCStyle.icon_normal
+
+                    text: VLCIcons.panel_left
+                    description: qsTr("Play Queue")
+
+                    AccessibleCompat.id: "topBarSidePanelButton"
+
+                    checked: root.playlistVisible
+
+                    Navigation.parentItem: root
+                    Navigation.leftItem: menuSelector
+                    Navigation.rightItem: backBtn
+
+                    onClicked: root.togglePlaylistVisibility()
+
+                    onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
+                }
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    implicitWidth: VLCStyle.border
+                    implicitHeight: VLCStyle.icon_small + VLCStyle.margin_xxsmall
+
+                    color: theme.border
+                }
+
+                Widgets.ButtonExt {
+                    id: backBtn
+
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    iconTxt: VLCIcons.folder
+                    text: root._libraryName
+                    font.pixelSize: VLCStyle.fontSize_large
+
+                    Accessible.name: qsTr("Back to %1").arg(root._libraryName)
+                    AccessibleCompat.id: "topBarBackButton"
+
+                    focus: true
+
+                    Navigation.parentItem: root
+                    Navigation.leftItem: sidebarButton
+                    onClicked: root.backRequested()
+
+                    onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
+                }
             }
         }
 
@@ -354,8 +447,8 @@ FocusScope{
 
         text: root.title
         color: theme.fg.primary
-        font.pixelSize: VLCStyle.dp(13, VLCStyle.scale)
-        font.weight: Font.DemiBold
+        font.pixelSize: VLCStyle.fontSize_large
+        font.weight: Font.Normal
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
 
@@ -434,55 +527,14 @@ FocusScope{
 
         visible: root._showTopBar
 
-        Widgets.IconToolButton {
-            id: menuSelector
-
-            anchors.verticalCenter: parent.verticalCenter
-            visible: !root.showToolbar
-            enabled: visible
-            focus: visible
-            font.pixelSize: VLCStyle.icon_banner
-
-            width: VLCStyle.bannerButton_width
-            height: VLCStyle.bannerButton_height
-
-            text: VLCIcons.more
-            description: qsTr("Menu")
-
-            AccessibleCompat.id: "topBarMenuButton"
-
-            checked: contextMenu.shown
-
-            Navigation.parentItem: root
-            Navigation.leftItem: backBtn
-            Navigation.rightItem: playlistButton
-
-            onClicked: contextMenu.popup(this.mapToGlobal(0, height))
-
-            onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
-
-            Menus.QmlGlobalMenu {
-                id: contextMenu
-
-                ctx: MainCtx
-
-                onAboutToShow: root.requestLockUnlockAutoHide(true)
-                onAboutToHide: root.requestLockUnlockAutoHide(false)
-            }
-
-            Connections {
-                target: root
-
-                function onForceUnlock() {
-                    contextMenu.close()
-                }
-            }
-        }
-
         PlaylistPane.PlaylistToggleButton {
             id: playlistButton
 
             anchors.verticalCenter: parent.verticalCenter
+
+            // The Juxtopposed title bar has the side panel toggle on the left instead.
+            visible: !root.pinControls
+
             objectName: ControlListModel.PLAYLIST_BUTTON
             font.pixelSize: VLCStyle.icon_banner
             text: VLCIcons.playlist
@@ -498,7 +550,7 @@ FocusScope{
             plListView: root.plListView
             
             Navigation.parentItem: root
-            Navigation.leftItem: menuSelector.visible ? menuSelector : backBtn
+            Navigation.leftItem: backBtn
 
             onClicked: togglePlaylistVisibility()
 

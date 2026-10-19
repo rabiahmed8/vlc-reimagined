@@ -73,13 +73,31 @@ FocusScope {
 
         anchors.fill: parent
 
-        font.pixelSize: VLCStyle.icon_banner
-
-        text: VLCIcons.search
         description: qsTr("Filter")
 
         focus: true
         checked: popup.visible
+
+        background: Rectangle {
+            radius: VLCStyle.dp(6, VLCStyle.scale)
+            color: (iconButton.checked || iconButton.hovered || iconButton.visualFocus) ? VLCStyle.palette.juxtBgPill : VLCStyle.palette.juxtBgA3
+            border.width: 1
+            border.color: (iconButton.checked || iconButton.visualFocus) ? VLCStyle.palette.orange500 : VLCStyle.palette.juxtDividerDim
+
+            Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+            Behavior on border.color { ColorAnimation { duration: VLCStyle.duration_short } }
+        }
+
+        contentItem: Text {
+            anchors.centerIn: parent
+            font.family: VLCIcons.fontFamily
+            font.pixelSize: VLCStyle.dp(15, VLCStyle.scale)
+            text: VLCIcons.search
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            color: iconButton.checked ? VLCStyle.palette.orange500 : (iconButton.hovered ? VLCStyle.palette.juxtFg1 : VLCStyle.palette.juxtFgA2)
+            Behavior on color { ColorAnimation { duration: VLCStyle.duration_short } }
+        }
 
         Navigation.parentItem: root
         Navigation.downItem: root.popBelow ? textField : null

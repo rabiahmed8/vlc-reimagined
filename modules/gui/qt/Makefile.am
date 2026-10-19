@@ -313,11 +313,18 @@ libqt_plugin_la_SOURCES = \
 	util/color_scheme_model.cpp util/color_scheme_model.hpp \
 	util/ui_notifier.cpp util/ui_notifier.hpp \
 	util/color_svg_image_provider.cpp util/color_svg_image_provider.hpp \
+	redesign/redesign_icon_provider.cpp \
+	redesign/redesign_icon_provider.hpp \
+	redesign/redesign_settings.cpp \
+	redesign/redesign_settings.hpp \
+	redesign/redesign_effects.cpp \
+	redesign/redesign_effects.hpp \
 	util/vlcaccess_image_provider.cpp util/vlcaccess_image_provider.hpp \
 	util/covergenerator.cpp \
 	util/covergenerator.hpp \
 	util/imageluminanceextractor.cpp util/imageluminanceextractor.hpp \
 	util/csdbuttonmodel.cpp util/csdbuttonmodel.hpp \
+	util/localdirectorymodel.cpp util/localdirectorymodel.hpp \
 	util/csdmenu.cpp util/csdmenu.hpp \
 	util/imagehelper.cpp util/imagehelper.hpp \
 	util/keyhelper.cpp util/keyhelper.hpp \
@@ -509,6 +516,9 @@ nodist_libqt_plugin_la_SOURCES = \
 	util/vlcaccess_image_provider.moc.cpp \
 	util/imageluminanceextractor.moc.cpp \
 	util/csdbuttonmodel.moc.cpp \
+	redesign/redesign_settings.moc.cpp \
+	redesign/redesign_effects.moc.cpp \
+	util/localdirectorymodel.moc.cpp \
 	util/csdmenu.moc.cpp \
 	util/keyhelper.moc.cpp \
 	util/listcache.moc.cpp \
@@ -1171,6 +1181,7 @@ libqml_module_player_a_QML = \
 	player/qml/PlaybackSpeed.qml \
 	player/qml/LyricsFlickable.qml \
 	player/qml/MiniPlayer.qml \
+	player/qml/MiniPlayerCard.qml \
 	player/qml/PIPPlayer.qml \
 	player/qml/Player.qml \
 	player/qml/PlayerControlLayout.qml \
@@ -1178,7 +1189,10 @@ libqml_module_player_a_QML = \
 	player/qml/PlayerToolbarVisibilityFSM.qml \
 	player/qml/MinimalView.qml \
 	player/qml/ResumeDialog.qml \
+	player/qml/SidePanelBrowser.qml \
+	player/qml/SidePanelRail.qml \
 	player/qml/SliderBar.qml \
+	player/qml/SubtitleLoader.qml \
 	player/qml/TopBar.qml \
 	player/qml/TracksMenu.qml \
 	player/qml/TracksPage.qml \
@@ -1296,6 +1310,119 @@ libqml_module_util_a_Singleton_QML = \
 libqml_module_util_a_SOURCES = $(QML_MODULE_util_SRC)
 nodist_libqml_module_util_a_SOURCES = util/qmlassets.cpp $(QML_MODULE_util_NODIST_EXTRA)
 QML_MODULE_LIBS += libqml_module_util.a
+
+libqml_module_redesign_a_QML = \
+	redesign/qml/RAccentPicker.qml \
+	redesign/qml/RAction.qml \
+	redesign/qml/RAddSubtitlesDialog.qml \
+	redesign/qml/RAddToPlaylistDialog.qml \
+	redesign/qml/RAdvancedOptions.qml \
+	redesign/qml/RAudioEffects.qml \
+	redesign/qml/RBarItem.qml \
+	redesign/qml/RButton.qml \
+	redesign/qml/RCheckItem.qml \
+	redesign/qml/RChip.qml \
+	redesign/qml/RClearHistoryButton.qml \
+	redesign/qml/RCollapsible.qml \
+	redesign/qml/RColorField.qml \
+	redesign/qml/RContextMenu.qml \
+	redesign/qml/RControlBar.qml \
+	redesign/qml/RCropEditor.qml \
+	redesign/qml/RCustomizeDialog.qml \
+	redesign/qml/RDashedLine.qml \
+	redesign/qml/RDialogWindow.qml \
+	redesign/qml/RDropdown.qml \
+	redesign/qml/REffectSlider.qml \
+	redesign/qml/REqualizerBands.qml \
+	redesign/qml/RFilterSwitch.qml \
+	redesign/qml/RIcon.qml \
+	redesign/qml/RIconButton.qml \
+	redesign/qml/RIdleView.qml \
+	redesign/qml/RKeyField.qml \
+	redesign/qml/RLibHomePage.qml \
+	redesign/qml/RLibMusicPage.qml \
+	redesign/qml/RLibNetworkPage.qml \
+	redesign/qml/RLibPlaylistsPage.qml \
+	redesign/qml/RLibRecentPage.qml \
+	redesign/qml/RLibStreams.qml \
+	redesign/qml/RLibVideosPage.qml \
+	redesign/qml/RLibraryFolders.qml \
+	redesign/qml/RLibraryHeader.qml \
+	redesign/qml/RLibraryRescan.qml \
+	redesign/qml/RLibrarySidebar.qml \
+	redesign/qml/RLibraryView.qml \
+	redesign/qml/RLibraryWindow.qml \
+	redesign/qml/RMainInterface.qml \
+	redesign/qml/RMainMenu.qml \
+	redesign/qml/RMediaMenu.qml \
+	redesign/qml/RMediaView.qml \
+	redesign/qml/RMenu.qml \
+	redesign/qml/RMenuItem.qml \
+	redesign/qml/RMenuSeparator.qml \
+	redesign/qml/RMiniPlayer.qml \
+	redesign/qml/RModuleSwitch.qml \
+	redesign/qml/RNetworkStreamDialog.qml \
+	redesign/qml/RNewPlaylistDialog.qml \
+	redesign/qml/ROnboarding.qml \
+	redesign/qml/ROption.qml \
+	redesign/qml/RPanelButton.qml \
+	redesign/qml/RPlaybackPopup.qml \
+	redesign/qml/RPlayerView.qml \
+	redesign/qml/RPlaylistSaver.qml \
+	redesign/qml/RPresetPicker.qml \
+	redesign/qml/RProfileMenu.qml \
+	redesign/qml/RQueueItem.qml \
+	redesign/qml/RQueuePanel.qml \
+	redesign/qml/RRecentMenu.qml \
+	redesign/qml/RScrollBar.qml \
+	redesign/qml/RSectionHeader.qml \
+	redesign/qml/RSeekBar.qml \
+	redesign/qml/RSegmented.qml \
+	redesign/qml/RSettingRow.qml \
+	redesign/qml/RSettingsAudio.qml \
+	redesign/qml/RSettingsControls.qml \
+	redesign/qml/RSettingsExtensions.qml \
+	redesign/qml/RSettingsGeneral.qml \
+	redesign/qml/RSettingsInterface.qml \
+	redesign/qml/RSettingsLibrary.qml \
+	redesign/qml/RSettingsNetwork.qml \
+	redesign/qml/RSettingsPage.qml \
+	redesign/qml/RSettingsPerformance.qml \
+	redesign/qml/RSettingsPlayback.qml \
+	redesign/qml/RSettingsPrivacy.qml \
+	redesign/qml/RSettingsRecording.qml \
+	redesign/qml/RSettingsSearchPage.qml \
+	redesign/qml/RSettingsSection.qml \
+	redesign/qml/RSettingsSubtitles.qml \
+	redesign/qml/RSettingsVideo.qml \
+	redesign/qml/RSettingsWindow.qml \
+	redesign/qml/RShortcutsWindow.qml \
+	redesign/qml/RSubtitleTimeline.qml \
+	redesign/qml/RSwitch.qml \
+	redesign/qml/RTabBar.qml \
+	redesign/qml/RText.qml \
+	redesign/qml/RTextField.qml \
+	redesign/qml/RTickSlider.qml \
+	redesign/qml/RTimeLabel.qml \
+	redesign/qml/RToolTip.qml \
+	redesign/qml/RTopBar.qml \
+	redesign/qml/RTrackList.qml \
+	redesign/qml/RTrackPage.qml \
+	redesign/qml/RTracksPopup.qml \
+	redesign/qml/RValueSlider.qml \
+	redesign/qml/RVideoEffects.qml \
+	redesign/qml/RVolumeCone.qml \
+	redesign/qml/RWindowButton.qml
+libqml_module_redesign_a_Singleton_QML = \
+	redesign/qml/RBarCatalog.qml \
+	redesign/qml/RPresets.qml \
+	redesign/qml/RProfiles.qml \
+	redesign/qml/RWindows.qml \
+	redesign/qml/Theme.qml
+libqml_module_redesign_a_SOURCES = $(QML_MODULE_redesign_SRC)
+nodist_libqml_module_redesign_a_SOURCES = redesign/qmlassets.cpp $(QML_MODULE_redesign_NODIST_EXTRA)
+QML_MODULE_LIBS += libqml_module_redesign.a
+
 
 libqml_module_widgets_a_Module = VLC.Widgets
 libqml_module_widgets_a_ModulePath = VLC/Widgets
@@ -1436,6 +1563,7 @@ libqt_plugin_la_QML_MODULES = \
 	player \
 	playercontrols \
 	playlist \
+	redesign \
 	style \
 	util \
 	widgets
@@ -1450,6 +1578,8 @@ libqt_plugin_la_ALL_QML = \
 	$(libqml_module_player_a_Singleton_QML) \
 	$(libqml_module_playercontrols_a_QML) \
 	$(libqml_module_playlist_a_QML) \
+	$(libqml_module_redesign_a_QML) \
+	$(libqml_module_redesign_a_Singleton_QML) \
 	$(libqml_module_style_a_QML) \
 	$(libqml_module_style_a_Singleton_QML) \
 	$(libqml_module_util_a_QML) \

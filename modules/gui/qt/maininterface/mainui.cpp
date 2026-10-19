@@ -46,6 +46,9 @@
 #include "util/flickable_scroll_handler.hpp"
 #include "util/kirigamiwheelhandler.hpp"
 #include "util/color_svg_image_provider.hpp"
+#include "redesign/redesign_icon_provider.hpp"
+#include "redesign/redesign_settings.hpp"
+#include "redesign/redesign_effects.hpp"
 #include "util/effects_image_provider.hpp"
 #include "util/vlcaccess_image_provider.hpp"
 #include "util/csdbuttonmodel.hpp"
@@ -57,6 +60,7 @@
 #include "util/sgmanipulator.hpp"
 #include "util/pointingtooltipattached.hpp"
 #include "util/accessible_compat_attached.hpp"
+#include "util/localdirectorymodel.hpp"
 
 #include "dialogs/help/aboutmodel.hpp"
 #include "dialogs/dialogs_provider.hpp"
@@ -163,8 +167,12 @@ bool MainUI::setup(QQmlEngine* engine)
         new EffectsImageProvider(engine);
     engine->addImageProvider(QStringLiteral("svgcolor"), new SVGColorImageImageProvider());
     engine->addImageProvider(QStringLiteral("vlcaccess"), new VLCAccessImageProvider());
+    engine->addImageProvider(QStringLiteral("redesignicon"), new RedesignIconProvider());
 
-    m_component  = new QQmlComponent(engine, QStringLiteral("qrc:/qt/qml/VLC/MainInterface/MainInterface.qml"), QQmlComponent::PreferSynchronous, engine);
+    const QString rootUrl = var_InheritBool(m_intf, "qt-redesign")
+            ? QStringLiteral("qrc:/qt/qml/VLC/Redesign/RMainInterface.qml")
+            : QStringLiteral("qrc:/qt/qml/VLC/MainInterface/MainInterface.qml");
+    m_component  = new QQmlComponent(engine, rootUrl, QQmlComponent::PreferSynchronous, engine);
     if (m_component->isLoading())
     {
         msg_Warn(m_intf, "component is still loading");
@@ -228,6 +236,10 @@ void MainUI::registerQMLTypes()
 
         // @uri VLC.MainInterface
         qmlRegisterSingletonInstance<MainCtx>(uri, versionMajor, versionMinor, "MainCtx", m_mainCtx);
+        qmlRegisterSingletonInstance<RedesignSettings>(uri, versionMajor, versionMinor, "RedesignSettings",
+                                                       new RedesignSettings(m_intf, this));
+        qmlRegisterSingletonInstance<RedesignEffects>(uri, versionMajor, versionMinor, "RedesignEffects",
+                                                      new RedesignEffects(m_intf, this));
 #ifdef _WIN32
         assert(dynamic_cast<MainCtxWin32*>(m_mainCtx));
         qmlRegisterAnonymousType<MainCtxWin32>(uri, versionMajor);
@@ -436,6 +448,7 @@ void MainUI::registerQMLTypes()
         qmlRegisterType<TextureProviderObserver>( uri, versionMajor, versionMinor, "TextureProviderObserver" );
         qmlRegisterType<TextureProviderIndirection>( uri, versionMajor, versionMinor, "TextureProviderIndirection" );
         qmlRegisterType<SGManipulator>( uri, versionMajor, versionMinor, "SGManipulator" );
+        qmlRegisterType<LocalDirectoryModel>( uri, versionMajor, versionMinor, "LocalDirectoryModel" );
         qmlRegisterTypesAndRevisions<AccessibleCompatAttached>( uri, versionMajor );
 
         qmlRegisterModule(uri, versionMajor, versionMinor);

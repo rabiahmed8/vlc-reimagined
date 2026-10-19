@@ -40,10 +40,10 @@ Widgets.GridItem {
 
     image: model.thumbnail || ""
     fallbackImage: VLCStyle.noArtVideoCover
-    fillMode: Image.Stretch
+    fillMode: Image.PreserveAspectCrop
 
     title: model.title || qsTr("Unknown title")
-    subtitle: model?.duration?.formatHMS() ?? ""
+    subtitle: (model?.duration && model.duration.valid()) ? model.duration.formatHMS() : ""
     pictureWidth: VLCStyle.gridCover_video_width
     pictureHeight: VLCStyle.gridCover_video_height
 
@@ -115,6 +115,33 @@ Widgets.GridItem {
             }
 
             labels: root.labels
+        }
+
+        Rectangle {
+            id: durationBadge
+
+            anchors {
+                right: parent.right
+                bottom: parent.bottom
+                margins: VLCStyle.margin_xxsmall
+            }
+
+            visible: (model?.duration && model.duration.valid())
+
+            implicitWidth: durationText.implicitWidth + VLCStyle.margin_xsmall
+            implicitHeight: durationText.implicitHeight + VLCStyle.margin_xxxsmall
+
+            radius: VLCStyle.dp(4, VLCStyle.scale)
+            color: Qt.rgba(0, 0, 0, 0.75)
+
+            Widgets.ListLabel {
+                id: durationText
+                anchors.centerIn: parent
+                text: (model?.duration && model.duration.valid()) ? model.duration.formatHMS() : ""
+                font.pixelSize: VLCStyle.fontSize_small
+                font.weight: Font.Medium
+                color: VLCStyle.palette.juxtFgA1
+            }
         }
     }
 

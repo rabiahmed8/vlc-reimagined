@@ -119,6 +119,8 @@ CSDButtonModel::CSDButtonModel(MainCtx *mainCtx, QObject *parent)
 
     newButton(CSDButton::Minimize, &CSDButtonModel::minimizeButtonClicked);
     newButton(CSDButton::MaximizeRestore, &CSDButtonModel::maximizeRestoreButtonClicked);
+    // Juxtopposed: the redesign has a fullscreen button next to maximize
+    newButton(CSDButton::Fullscreen, &CSDButtonModel::fullscreenButtonClicked);
     newButton(CSDButton::Close, &CSDButtonModel::closeButtonClicked);
 }
 
@@ -140,6 +142,11 @@ void CSDButtonModel::maximizeRestoreButtonClicked()
         emit m_mainCtx->requestInterfaceNormal();
     else
         emit m_mainCtx->requestInterfaceMaximized();
+}
+
+void CSDButtonModel::fullscreenButtonClicked()
+{
+    m_mainCtx->toggleInterfaceFullScreen();
 }
 
 void CSDButtonModel::closeButtonClicked()

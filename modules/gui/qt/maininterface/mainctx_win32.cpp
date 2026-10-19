@@ -490,6 +490,9 @@ private:
         const auto& buttons = m_buttonmodel->windowCSDButtons();
         const auto it = std::find_if(buttons.begin(), buttons.end(), [&point](const auto& button)
         {
+            // has no caption hit-test code, leave it to the client area
+            if (button->type() == CSDButton::Fullscreen)
+                return false;
             QRect rect = button->rect();
             rect.setY(rect.y() + 2); // leave a small gap for top resize which is always within the caption area
             if (rect.contains(point))

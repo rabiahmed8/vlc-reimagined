@@ -44,6 +44,13 @@ T.ProgressBar {
     property color backgroundColor: theme.bg.primary
     property real touchHandlerMargin: VLCStyle.touchHandlerMargin
 
+    // Juxtopposed seek bar: a tall rounded track with an inset "played"
+    // fill and a slim, always visible accent handle.
+    property bool juxtStyle: false
+    readonly property real _juxtInset: juxtStyle ? VLCStyle.dp(2, VLCStyle.scale) : 0
+    readonly property real _juxtInnerRadius: VLCStyle.dp(4, VLCStyle.scale)
+    readonly property color _playedColor: juxtStyle ? theme.bg.secondary : theme.fg.primary
+
     Keys.onRightPressed: Player.jumpFwd()
     Keys.onLeftPressed: Player.jumpBwd()
 
@@ -71,6 +78,10 @@ T.ProgressBar {
         onTriggered: control._isSeekPointsShown = false
     }
 
+    readonly property real _scrubX: (dragHandler.active) ? Helpers.clamp(dragHandler.point.position.x, 0, control.availableWidth)
+                                                         : (hoverHandler.hovered ? Helpers.clamp(hoverHandler.point.position.x, 0, control.availableWidth)
+                                                                                 : (control.visualPosition * control.width))
+
     Widgets.PointingToolTipAttached.visible: (hoverHandler.hovered || control.visualFocus || dragHandler.active)
 
     Widgets.PointingToolTipAttached.text: {
@@ -80,21 +91,20 @@ T.ProgressBar {
         let _text
 
         const length = Player.length
-        if (hoverHandler.hovered)
-            _text = length.scale(Widgets.PointingToolTipAttached.instance.pos.x / control.width)
+        if (hoverHandler.hovered || dragHandler.active)
+            _text = length.scale(control.width > 0 ? (control._scrubX / control.width) : 0)
         else
             _text = Player.time
 
         _text = _text.formatHMS(length.isSubSecond() ? VLCTick.SubSecondFormattedAsMS : 0)
 
         if (Player.hasChapters)
-            _text += " - " + Player.chapters.getNameAtPosition(control._tooltipPosition)
+            _text += " - " + Player.chapters.getNameAtPosition(control.width > 0 ? (control._scrubX / control.width) : 0)
 
         return _text
     }
 
-    Widgets.PointingToolTipAttached.pos: Qt.point(hoverHandler.hovered ? Helpers.clamp(hoverHandler.point.position.x, 0, control.availableWidth)
-                                                                       : (control.visualPosition * control.width), 0)
+    Widgets.PointingToolTipAttached.pos: Qt.point(control._scrubX, 0)
 
     FSM {
         id: fsm
@@ -321,10 +331,10 @@ T.ProgressBar {
 
         Rectangle {
             id: sliderRect
-            visible: !Player.hasChapters
+            visible: !Player.hasChapters || control.juxtStyle
             color: control.backgroundColor
             anchors.fill: parent
-            radius: implicitHeight
+            radius: control.juxtStyle ? VLCStyle.juxtSeek_radius : implicitHeight
         }
 
         Repeater {
@@ -337,6 +347,7 @@ T.ProgressBar {
 
             model: Player.chapters
             Item {
+                visible: !control.juxtStyle || (model.startPosition > 0.0)
                 Rectangle {
                     id: seekpointsRect
                     readonly property real startPosition: model.startPosition ??  0.0
@@ -357,9 +368,15 @@ T.ProgressBar {
                     readonly property bool _hovered: hoverHandler.hovered &&
                                             (hoverHandler.point.position.x > x && hoverHandler.point.position.x < x+width)
 
-                    color: _currentChapter < 0 ? theme.fg.primary : control.backgroundColor
-                    width: sliderRect.width * seekpointsRect.endPosition - x - control._seekPointsDistance
+                    color: control.juxtStyle ? VLCStyle.palette.juxtDividerBright
+                                             : (_currentChapter < 0 ? control._playedColor : control.backgroundColor)
+                    width: control.juxtStyle ? VLCStyle.dp(2, VLCStyle.scale)
+                                             : (sliderRect.width * seekpointsRect.endPosition - x - control._seekPointsDistance)
                     x: sliderRect.width * seekpointsRect.startPosition
+                    y: control.juxtStyle ? control._juxtInset : 0
+                    height: control.juxtStyle ? (control.barHeight - 2 * control._juxtInset) : control.barHeight
+                    radius: control.juxtStyle ? 1 : control._seekPointsRadius
+                    z: control.juxtStyle ? 2 : 0
 
                     Rectangle {
                         id: progressRepRect
@@ -369,8 +386,8 @@ T.ProgressBar {
                         radius: parent.radius
 
                         width: sliderRect.width * control.visualPosition - parent.x - control._seekPointsDistance
-                        visible: parent._currentChapter === 0
-                        color: theme.fg.primary
+                        visible: !control.juxtStyle && (parent._currentChapter === 0)
+                        color: control._playedColor
 
                         // We use dynamic mutability group because time interpolation
                         // may induce rapid change:
@@ -421,7 +438,8 @@ T.ProgressBar {
                     }
                 ]
 
-                state: (seekpointsRect._hovered || (seekpointsRect._currentChapter === 0 && fsm._state === fsm.fsmHeld))
+                state: (!control.juxtStyle &&
+                        (seekpointsRect._hovered || (seekpointsRect._currentChapter === 0 && fsm._state === fsm.fsmHeld)))
                        ? "visibleLarge"
                        : "visible"
             }
@@ -429,11 +447,14 @@ T.ProgressBar {
 
         Rectangle {
             id: progressRect
-            width: control.visualPosition * parent.width
-            visible: !Player.hasChapters
-            color: theme.fg.primary
-            height: control.barHeight
-            radius: control._seekPointsRadius
+            x: control._juxtInset
+            y: control._juxtInset
+            width: control.visualPosition * (parent.width - 2 * control._juxtInset)
+            visible: control.juxtStyle || !Player.hasChapters
+            color: control._playedColor
+            height: control.barHeight - 2 * control._juxtInset
+            radius: control.juxtStyle ? control._juxtInnerRadius : control._seekPointsRadius
+            z: 1
 
             // We use dynamic mutability group because time interpolation
             // may induce rapid change:
@@ -570,13 +591,16 @@ T.ProgressBar {
 
         property int _size: control.barHeight * 3
 
-        x: (control.visualPosition * control.availableWidth) - width / 2
+        x: control.juxtStyle
+           ? control._juxtInset + Math.max(0, control.visualPosition * (control.availableWidth - 2 * control._juxtInset) - width)
+           : (control.visualPosition * control.availableWidth) - width / 2
         y: (control.barHeight - height) / 2
 
-        implicitWidth: sliderHandle._size
-        implicitHeight: sliderHandle._size
-        radius: VLCStyle.margin_small
+        implicitWidth: control.juxtStyle ? VLCStyle.juxtSeekHandle_width : sliderHandle._size
+        implicitHeight: control.juxtStyle ? (control.barHeight - 2 * control._juxtInset) : sliderHandle._size
+        radius: control.juxtStyle ? control._juxtInnerRadius : VLCStyle.margin_small
         color: theme.fg.primary
+        z: 3
 
         // We use dynamic mutability group because time interpolation
         // may induce rapid change:
@@ -625,7 +649,9 @@ T.ProgressBar {
             }
         ]
 
-        state: (hoverHandler.hovered || control.visualFocus)
+        // The Juxtopposed handle is always shown and never animates its size.
+        state: control.juxtStyle ? ""
+             : (hoverHandler.hovered || control.visualFocus)
                ? ((control._currentChapterHovered || (Player.hasChapters && fsm._state === fsm.fsmHeld)) ? "visibleLarge" : "visible")
                : "hidden"
     }

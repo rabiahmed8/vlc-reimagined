@@ -111,8 +111,25 @@ public:
     Q_PROPERTY(CSDMetrics* csdMetrics READ getCSDMetrics NOTIFY CSDMetricsChanged FINAL)
 
     //standard color definitions used by light/dark themes
-    COLOR_DEFINITION(orange500, "#FF8800");
-    COLOR_DEFINITION(orange800, "#FF610A");
+    COLOR_DEFINITION(orange500, "#D37918");
+    COLOR_DEFINITION(orange800, "#E08A2E");
+
+    //Juxtopposed redesign tokens (Figma "Dark/..." styles)
+    COLOR_DEFINITION(juxtBgA3, "#1B1B1B");      // title bar, control bar
+    COLOR_DEFINITION(juxtBgA4, "#191919");      // navigation rail
+    COLOR_DEFINITION(juxtBgB1, "#0E0E0E");      // library panel
+    COLOR_DEFINITION(juxtBgB2, "#090909");      // seek track
+    COLOR_DEFINITION(juxtBgAccent, "#371F06");  // played part of the seek track
+    COLOR_DEFINITION(juxtBgPill, "#262626");    // hovered / selected side bar item
+    COLOR_DEFINITION(juxtFgA1, "#969696");
+    COLOR_DEFINITION(juxtFgA2, "#8F8F8F");
+    COLOR_DEFINITION(juxtFgA3, "#6B6B6B");
+    COLOR_DEFINITION(juxtFgB1, "#161616");      // glyph on accent buttons
+    COLOR_DEFINITION(juxtDividerBright, "#373737");
+    COLOR_DEFINITION(juxtDividerDim, "#222222");
+    COLOR_DEFINITION(juxtBgA5, "#151515");
+    COLOR_DEFINITION(juxtFg1, "#EAEAEA");
+    COLOR_DEFINITION(juxtFg2, "#C6C6C6");
 
     COLOR_DEFINITION(orange400, "#f89a06"); //FIXME name have been chosen randomly by me
     COLOR_DEFINITION(orange200, "#e29a06"); //FIXME name have been chosen randomly by me

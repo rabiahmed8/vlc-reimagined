@@ -152,19 +152,7 @@ T.Control {
 
         hoverEnabled: true
 
-        readonly property bool cursorInside: {
-            if (!containsMouse)
-                return false
-
-            const center = (width / 2)
-            if (Helpers.pointInRadius( center - mouseX,
-                                       center - mouseY,
-                                       center )) {
-                return true
-            } else {
-                return false
-            }
-        }
+        readonly property bool cursorInside: containsMouse
 
         onCursorInsideChanged: {
             if (pressed && !cursorInside) {
@@ -217,10 +205,9 @@ T.Control {
                 return VLCIcons.play_filled
         }
 
-        color: cursorInside ? theme.accent
-                            : "black"  //foreground is always black
+        color: VLCStyle.palette.isDark ? "#161616" : "black"  // dark glyph on the accent pill
 
-        font.pixelSize: Math.round(parent.height / 1.7)
+        font.pixelSize: VLCStyle.icon_normal
 
         font.family: VLCIcons.fontFamily
 
@@ -239,15 +226,16 @@ T.Control {
         }
     }
 
+    // Juxtopposed: a 54x28 accent pill instead of the round gradient button.
     background: Item {
-        implicitWidth: height
-        implicitHeight: VLCStyle.icon_medium
+        implicitWidth: VLCStyle.playButton_width
+        implicitHeight: VLCStyle.playButton_height
 
         Widgets.AnimatedBackground {
             anchors.fill: parent
-            anchors.margins: -border.width * 4
+            anchors.margins: -border.width * 2
 
-            radius: width / 2
+            radius: VLCStyle.playButton_radius + border.width * 2
             border.pixelAligned: false
 
             enabled: theme.initialized
@@ -258,35 +246,33 @@ T.Control {
         Rectangle {
             anchors.fill: parent
 
-            radius: width / 2
+            radius: VLCStyle.playButton_radius
+            color: theme.accent
 
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#e25b01" }
-                GradientStop { position: 1.0; color: "#f89a06" }
-            }
-
-            Widgets.RoundedRectangleShadow {
+            Rectangle {
                 id: hoverShadow
+
+                // Hover highlight
+                anchors.fill: parent
+                radius: parent.radius
+                color: Qt.rgba(1, 1, 1, 0.12)
 
                 visible: opacity > 0
                 opacity: 0
-
-                blurRadius: VLCStyle.dp(9, VLCStyle.scale)
-                yOffset: VLCStyle.dp(4, VLCStyle.scale)
-
-                color: theme.accent.alpha(0.29)
             }
 
             Rectangle {
                 id: innerRectangle
 
-                color: "white"
+                // Press-and-hold (stop) progress, sweeping left to right
+                color: Qt.rgba(0, 0, 0, 0.25)
 
-                anchors.fill: parent
-                anchors.margins: _diminished ? (parent.width / 2)
-                                             : VLCStyle.dp(2, VLCStyle.scale)
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                width: _diminished ? parent.width : 0
 
-                radius: width / 2
+                radius: parent.radius
 
                 property bool _diminished: false
 
@@ -310,7 +296,7 @@ T.Control {
                     onTriggered: innerRectangle._diminished = true
                 }
 
-                Behavior on anchors.margins {
+                Behavior on width {
                     id: marginBehavior
                     NumberAnimation {
                         // Press and hold action must be triggered

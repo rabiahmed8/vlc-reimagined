@@ -460,3 +460,65 @@ void MediaLib::cancelMLTask(const QObject* object, quint64 taskId)
     m_runner->cancelTask(object, taskId);
 }
 
+void MediaLib::mediaUrls(const MLItemId &itemId, QJSValue callback)
+{
+    if (!callback.isCallable()) return;
+    struct Ctx { QStringList urls; };
+    runOnMLThread<Ctx>(this, [itemId](vlc_medialibrary_t *ml, Ctx &ctx) {
+        auto append = [&ctx](const vlc_ml_media_t &media) {
+            if (!media.p_files) return;
+            for (size_t i = 0; i < media.p_files->i_nb_items; ++i) {
+                const auto &file = media.p_files->p_items[i];
+                if (file.i_type == VLC_ML_FILE_TYPE_MAIN && file.psz_mrl) {
+                    ctx.urls.push_back(qfu(file.psz_mrl));
+                    break;
+                }
+            }
+        };
+        if (itemId.hasParent()) {
+            const auto query = vlc_ml_query_params_create();
+            ml_unique_ptr<vlc_ml_media_list_t> list(vlc_ml_list_media_of(ml, &query, itemId.type, itemId.id));
+            if (list) for (const auto &media : ml_range_iterate<vlc_ml_media_t>(list)) append(media);
+        } else {
+            ml_unique_ptr<vlc_ml_media_t> media(vlc_ml_get_media(ml, itemId.id));
+            if (media) append(*media);
+        }
+    }, [this, callback](quint64, const Ctx &ctx) mutable {
+        if (auto engine = qjsEngine(this)) callback.call({engine->toScriptValue(ctx.urls)});
+    });
+}
+
+void MediaLib::setFavorite(const MLItemId &itemId, bool favorite)
+{
+    runOnMLThread(this, [itemId, favorite](vlc_medialibrary_t *ml) {
+        switch (itemId.type) {
+        case VLC_ML_PARENT_PLAYLIST: vlc_ml_playlist_set_favorite(ml, itemId.id, favorite); break;
+        case VLC_ML_PARENT_ALBUM: vlc_ml_album_set_favorite(ml, itemId.id, favorite); break;
+        case VLC_ML_PARENT_ARTIST: vlc_ml_artist_set_favorite(ml, itemId.id, favorite); break;
+        case VLC_ML_PARENT_GENRE: vlc_ml_genre_set_favorite(ml, itemId.id, favorite); break;
+        case VLC_ML_PARENT_FOLDER: {
+            ml_unique_ptr<vlc_ml_folder_t> folder(vlc_ml_get_folder(ml, itemId.id));
+            if (folder) vlc_ml_folder_set_favorite(ml, folder->psz_mrl, favorite);
+            break;
+        }
+        default: vlc_ml_media_set_favorite(ml, itemId.id, favorite); break;
+        }
+    });
+}
+
+void MediaLib::isFavorite(const MLItemId &itemId, QJSValue callback)
+{
+    if (!callback.isCallable()) return;
+    struct Ctx { bool favorite = false; };
+    runOnMLThread<Ctx>(this, [itemId](vlc_medialibrary_t *ml, Ctx &ctx) {
+        switch (itemId.type) {
+        case VLC_ML_PARENT_PLAYLIST: { ml_unique_ptr<vlc_ml_playlist_t> p(vlc_ml_get_playlist(ml, itemId.id)); if (p) ctx.favorite = p->b_is_favorite; break; }
+        case VLC_ML_PARENT_FOLDER: { ml_unique_ptr<vlc_ml_folder_t> p(vlc_ml_get_folder(ml, itemId.id)); if (p) ctx.favorite = p->b_is_favorite; break; }
+        case VLC_ML_PARENT_ALBUM: { ml_unique_ptr<vlc_ml_album_t> p(vlc_ml_get_album(ml, itemId.id)); if (p) ctx.favorite = p->b_is_favorite; break; }
+        case VLC_ML_PARENT_ARTIST: { ml_unique_ptr<vlc_ml_artist_t> p(vlc_ml_get_artist(ml, itemId.id)); if (p) ctx.favorite = p->b_is_favorite; break; }
+        case VLC_ML_PARENT_GENRE: { ml_unique_ptr<vlc_ml_genre_t> p(vlc_ml_get_genre(ml, itemId.id)); if (p) ctx.favorite = p->b_is_favorite; break; }
+        default: { ml_unique_ptr<vlc_ml_media_t> p(vlc_ml_get_media(ml, itemId.id)); if (p) ctx.favorite = p->b_is_favorite; break; }
+        }
+    }, [callback](quint64, const Ctx &ctx) mutable { callback.call({QJSValue(ctx.favorite)}); });
+}
+
