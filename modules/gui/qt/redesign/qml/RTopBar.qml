@@ -40,6 +40,7 @@ Rectangle {
     signal locationClicked()
 
     readonly property bool fullscreen: MainCtx.intfMainWindow.visibility === Window.FullScreen
+    readonly property bool maximized: MainCtx.intfMainWindow.visibility === Window.Maximized
     readonly property bool showWindowButtons: MainCtx.clientSideDecoration && !fullscreen
 
     implicitHeight: Theme.topBarHeight
@@ -118,6 +119,7 @@ Rectangle {
                 id: locationBtn
                 visible: root.libraryAvailable && root.locationName.length > 0
                 hoverEnabled: true
+                Accessible.name: root.locationName
                 implicitHeight: Theme.dp(28)
                 implicitWidth: Math.min(locationRow.implicitWidth + Theme.dp(8), root.width * 0.26)
                 onClicked: root.locationClicked()
@@ -151,38 +153,44 @@ Rectangle {
                 return qsTr("VLC Media Player")
             }
         }
+    }
 
-        RowLayout {
-            id: rightGroup
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 0
+    RowLayout {
+        id: rightGroup
+        anchors.right: parent.right
+        anchors.rightMargin: root.maximized && root.showWindowButtons ? 0 : Theme.dp(6)
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 0
 
-            Repeater {
-                model: RBarCatalog.topExtras
-                delegate: RBarItem {
-                    required property string modelData
-                    itemId: modelData
-                    Layout.preferredWidth: implicitWidth
-                    Layout.preferredHeight: implicitHeight
-                }
+        Repeater {
+            model: RBarCatalog.topExtras
+            delegate: RBarItem {
+                required property string modelData
+                itemId: modelData
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: implicitWidth
+                Layout.preferredHeight: implicitHeight
             }
+        }
 
-            Repeater {
-                model: root.showWindowButtons ? MainCtx.csdButtonModel.windowCSDButtons : []
+        Repeater {
+            model: root.showWindowButtons ? MainCtx.csdButtonModel.windowCSDButtons : []
 
-                delegate: RWindowButton {
-                    required property var modelData
-                    csdButton: modelData
-                }
+            delegate: RWindowButton {
+                required property var modelData
+                csdButton: modelData
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: implicitWidth
+                Layout.preferredHeight: implicitHeight
             }
+        }
 
-            RIconButton {
-                visible: !root.showWindowButtons
-                iconName: root.fullscreen ? "fullscreen_active" : "fullscreen"
-                toolTip: root.fullscreen ? qsTr("Exit fullscreen") : qsTr("Fullscreen")
-                onClicked: MainCtx.toggleInterfaceFullScreen()
-            }
+        RIconButton {
+            visible: !root.showWindowButtons
+            Layout.alignment: Qt.AlignVCenter
+            iconName: root.fullscreen ? "fullscreen_active" : "fullscreen"
+            toolTip: root.fullscreen ? qsTr("Exit fullscreen") : qsTr("Fullscreen")
+            onClicked: MainCtx.toggleInterfaceFullScreen()
         }
     }
 }

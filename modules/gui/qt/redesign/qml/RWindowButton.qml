@@ -22,8 +22,10 @@ import QtQuick.Templates as T
 import VLC.MainInterface
 
 // Client side window button using the redesign icons.
-// The fullscreen button of the design is inserted before "close".
-Row {
+// The fullscreen button is part of the CSD button model, so this delegate only
+// renders the button it is given (the old version inserted a second fullscreen
+// button before close, which left an empty slot in the title bar).
+T.AbstractButton {
     id: root
 
     property var csdButton
@@ -31,65 +33,84 @@ Row {
     visible: csdButton && csdButton.type !== CSDButton.SystemMenu
 
     readonly property bool isClose: csdButton && csdButton.type === CSDButton.Close
+    readonly property bool maximized: MainCtx.intfMainWindow.visibility === Window.Maximized
     readonly property bool fullscreen: MainCtx.intfMainWindow.visibility === Window.FullScreen
 
-    RIconButton {
-        visible: root.isClose
-        iconName: root.fullscreen ? "fullscreen_active" : "fullscreen"
-        toolTip: qsTr("Fullscreen")
-        implicitWidth: Theme.dp(36)
-        onClicked: MainCtx.toggleInterfaceFullScreen()
+    // A maximized window has no frame to keep the close button away from the
+    // screen corner, so let it fill the corner like the design reference.
+    readonly property bool flushToCorner: isClose && maximized
+
+    implicitWidth: Theme.dp(flushToCorner ? 42 : 36)
+    implicitHeight: Theme.dp(flushToCorner ? 40 : 36)
+
+    padding: 0
+    focusPolicy: Qt.TabFocus
+    hoverEnabled: true
+
+    readonly property bool hot: hovered || (csdButton && csdButton.showHovered)
+
+    readonly property string label: {
+        if (!csdButton)
+            return ""
+        switch (csdButton.type) {
+        case CSDButton.Minimize: return qsTr("Minimize")
+        case CSDButton.MaximizeRestore: return maximized ? qsTr("Restore") : qsTr("Maximize")
+        case CSDButton.Fullscreen: return fullscreen ? qsTr("Exit fullscreen") : qsTr("Fullscreen")
+        case CSDButton.Close: return qsTr("Close")
+        }
+        return ""
     }
 
-    T.AbstractButton {
-        id: btn
+    Accessible.name: label
 
-        implicitWidth: Theme.dp(36)
-        implicitHeight: Theme.dp(28)
-        hoverEnabled: true
+    onClicked: if (csdButton) csdButton.click()
 
-        // let the platform know where the button is (Windows snap layouts)
-        onXChanged: Qt.callLater(updateRect)
-        onWidthChanged: Qt.callLater(updateRect)
-        Component.onCompleted: Qt.callLater(updateRect)
+    // let the platform know where the button is (Windows snap layouts)
+    onXChanged: Qt.callLater(updateRect)
+    onWidthChanged: Qt.callLater(updateRect)
+    Component.onCompleted: Qt.callLater(updateRect)
 
-        Connections {
-            target: btn.Window.window
-            function onWidthChanged() { Qt.callLater(btn.updateRect) }
-            function onHeightChanged() { Qt.callLater(btn.updateRect) }
-        }
+    Connections {
+        target: root.Window.window
+        function onWidthChanged() { Qt.callLater(root.updateRect) }
+        function onHeightChanged() { Qt.callLater(root.updateRect) }
+    }
 
-        function updateRect() {
-            if (!root.csdButton)
-                return
-            const p = btn.mapToItem(null, 0, 0)
-            root.csdButton.rect = Qt.rect(p.x, p.y, btn.width, btn.height)
-        }
+    function updateRect() {
+        if (!root.csdButton)
+            return
+        const p = root.mapToItem(null, 0, 0)
+        root.csdButton.rect = Qt.rect(p.x, p.y, root.width, root.height)
+    }
 
-        onClicked: root.csdButton.click()
+    background: Rectangle {
+        radius: Theme.radius
+        color: root.hot ? Theme.hover
+             : root.visualFocus ? Theme.pressed
+             : "transparent"
+        Behavior on color { ColorAnimation { duration: Theme.durationShort } }
+    }
 
-        readonly property bool hot: hovered || (root.csdButton && root.csdButton.showHovered)
-
-        background: Rectangle {
-            radius: Theme.radiusSmall
-            color: btn.hot ? (root.isClose ? "#C42B1C" : Theme.hover) : "transparent"
-        }
-
-        contentItem: Item {
-            RIcon {
-                anchors.centerIn: parent
-                color: btn.hot && root.isClose ? "white" : Theme.text
-                name: {
-                    if (!root.csdButton)
-                        return ""
-                    switch (root.csdButton.type) {
-                    case CSDButton.Minimize: return "minimize"
-                    case CSDButton.MaximizeRestore: return "maximize"
-                    case CSDButton.Close: return "close"
-                    }
+    contentItem: Item {
+        RIcon {
+            anchors.centerIn: parent
+            color: root.hot || root.visualFocus ? Theme.textStrong : Theme.text
+            name: {
+                if (!root.csdButton)
                     return ""
+                switch (root.csdButton.type) {
+                case CSDButton.Minimize: return "minimize"
+                case CSDButton.MaximizeRestore: return root.maximized ? "restore" : "maximize"
+                case CSDButton.Fullscreen: return root.fullscreen ? "fullscreen_active" : "fullscreen"
+                case CSDButton.Close: return "close"
                 }
+                return ""
             }
         }
+    }
+
+    RToolTip {
+        text: root.label
+        visible: root.hovered && root.label.length > 0
     }
 }
