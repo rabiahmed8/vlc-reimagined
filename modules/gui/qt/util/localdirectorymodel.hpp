@@ -21,6 +21,7 @@
 
 #include <QAbstractListModel>
 #include <QString>
+#include <QStringList>
 #include <QUrl>
 #include <QList>
 #include <QDateTime>
@@ -35,6 +36,8 @@ class LocalDirectoryModel : public QAbstractListModel
     Q_PROPERTY(QString currentDirName READ currentDirName NOTIFY currentPathChanged)
     Q_PROPERTY(bool canCdUp READ canCdUp NOTIFY currentPathChanged)
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+    Q_PROPERTY(int mediaCount READ mediaCount NOTIFY countChanged)
+    Q_PROPERTY(QString currentUrl READ currentUrl NOTIFY currentPathChanged)
     Q_PROPERTY(QVariantList breadcrumbs READ breadcrumbs NOTIFY currentPathChanged)
     Q_PROPERTY(QString searchPattern READ searchPattern WRITE setSearchPattern NOTIFY searchPatternChanged)
 
@@ -44,6 +47,7 @@ public:
         PathRole,
         UrlRole,
         IsFolderRole,
+        IsAudioRole,
         FileSizeRole,
         FileDateRole
     };
@@ -59,7 +63,9 @@ public:
 
     QString parentPath() const;
     QString currentDirName() const;
+    QString currentUrl() const;
     bool canCdUp() const;
+    int mediaCount() const;
     QVariantList breadcrumbs() const;
 
     QString searchPattern() const;
@@ -69,6 +75,8 @@ public:
     Q_INVOKABLE void cdUp();
     Q_INVOKABLE void syncToUrl(const QUrl &url);
     Q_INVOKABLE void refresh();
+    // URLs of the media files of the current folder (not the subfolders)
+    Q_INVOKABLE QVariantList mediaUrls() const;
 
 signals:
     void currentPathChanged();
@@ -83,6 +91,7 @@ private:
         QString path;
         QString url;
         bool isFolder = false;
+        bool isAudio = false;
         qint64 size = 0;
         QDateTime mtime;
     };

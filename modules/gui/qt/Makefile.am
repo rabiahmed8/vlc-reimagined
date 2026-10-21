@@ -1339,6 +1339,7 @@ libqml_module_redesign_a_QML = \
 	redesign/qml/RIconButton.qml \
 	redesign/qml/RIdleView.qml \
 	redesign/qml/RKeyField.qml \
+	redesign/qml/RLibFoldersPage.qml \
 	redesign/qml/RLibHomePage.qml \
 	redesign/qml/RLibMusicPage.qml \
 	redesign/qml/RLibNetworkPage.qml \

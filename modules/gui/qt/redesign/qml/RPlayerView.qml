@@ -41,8 +41,15 @@ FocusScope {
     // page: "" (last page) or a library page ("videos"...)
     signal libraryRequested(string page)
     signal sidebarRequested()
+    // folder of the media, to open the file explorer there
+    signal folderRequested(string directory)
 
-    onMiniChanged: if (mini) openPanel = ""
+    onMiniChanged: {
+        // standard VLC hotkeys in the player, QML navigation in the library
+        MainCtx.preferHotkeys = !mini
+        if (mini)
+            openPanel = ""
+    }
 
     // bars are pinned while nothing plays, a panel is open or a menu is shown
     readonly property bool pinned: MainCtx.pinVideoControls || !hasVideo || !playing || openPanel !== ""
@@ -191,11 +198,17 @@ FocusScope {
         libraryAvailable: true
         locationName: {
             const u = String(Player.url || "")
-            const parts = u.split("/")
-            return parts.length > 1 ? decodeURIComponent(parts[parts.length - 2]) : qsTr("Library")
+            if (u.length === 0 || !u.startsWith("file:"))
+                return qsTr("Folders")
+            try {
+                const parts = decodeURIComponent(u).split("/")
+                return parts.length > 1 ? parts[parts.length - 2] : qsTr("Folders")
+            } catch (e) {
+                return qsTr("Folders")
+            }
         }
         onSidebarToggled: root.sidebarRequested()
-        onLocationClicked: root.libraryRequested("videos")
+        onLocationClicked: root.folderRequested(RedesignSettings.directoryOf(String(Player.url || "")))
     }
 
     RControlBar {
@@ -283,5 +296,9 @@ FocusScope {
         root.poke()
     }
 
-    Component.onCompleted: poke()
+    Component.onCompleted: {
+        MainCtx.preferHotkeys = !mini
+        poke()
+    }
+    Component.onDestruction: MainCtx.preferHotkeys = false
 }

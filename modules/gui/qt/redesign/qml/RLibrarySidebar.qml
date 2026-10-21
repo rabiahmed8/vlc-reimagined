@@ -19,7 +19,7 @@ import QtQuick
 import QtQuick.Templates as T
 
 // Sidebar of the library (Figma "Player-1"): Home, Videos, Music, Network,
-// Playlists, Recent and "Add item".
+// Playlists, Recent, Folders and "Add item".
 Rectangle {
     id: root
 
@@ -35,7 +35,7 @@ Rectangle {
     color: Theme.p.bgA3
 
     // icons that have a filled "_active" variant
-    readonly property var activeIcons: ["home", "videos", "songs", "streaming", "playlist"]
+    readonly property var activeIcons: ["home", "videos", "songs", "streaming", "playlist", "folder"]
 
     readonly property var entries: [
         { page: "home", text: qsTr("Home"), icon: "home" },
@@ -44,6 +44,7 @@ Rectangle {
         { page: "network", text: qsTr("Network"), icon: "streaming" },
         { page: "playlists", text: qsTr("Playlists"), icon: "playlist" },
         { page: "recent", text: qsTr("Recent"), icon: "recent" },
+        { page: "folders", text: qsTr("Folders"), icon: "folder" },
         { page: "", text: qsTr("Add item"), icon: "add" }
     ]
 

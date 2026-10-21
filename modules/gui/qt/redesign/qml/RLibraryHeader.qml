@@ -107,6 +107,7 @@ Item {
         RIconButton {
             id: sortBtn
             anchors.verticalCenter: parent.verticalCenter
+            visible: root.library.sortKeys.length > 0
             iconName: root.library.sortCriteria.length > 0 ? "sort_active" : "sort"
             toolTip: qsTr("Sort")
             onClicked: sortMenu.popup(sortBtn, 0, sortBtn.height + Theme.dp(6))

@@ -22,6 +22,40 @@
 #include <QStandardPaths>
 #include <QVariantMap>
 
+namespace
+{
+
+const QStringList &audioExtensions()
+{
+    static const QStringList extensions = {
+        "aac", "ac3", "aif", "aiff", "alac", "amr", "ape", "dts", "flac",
+        "m4a", "mka", "mp2", "mp3", "oga", "ogg", "opus", "wav", "wma", "wv"
+    };
+    return extensions;
+}
+
+const QStringList &mediaExtensions()
+{
+    static const QStringList extensions = audioExtensions() + QStringList{
+        "3g2", "3gp", "asf", "avi", "divx", "dv", "f4v", "flv", "iso", "m1v",
+        "m2ts", "m2v", "m4v", "mkv", "mov", "mp4", "mpe", "mpeg", "mpg", "mts",
+        "mxf", "ogm", "ogv", "rm", "rmvb", "ts", "vob", "webm", "wmv"
+    };
+    return extensions;
+}
+
+bool isAudioFile(const QFileInfo &file)
+{
+    return audioExtensions().contains(file.suffix().toLower());
+}
+
+bool isMediaFile(const QFileInfo &file)
+{
+    return mediaExtensions().contains(file.suffix().toLower());
+}
+
+}
+
 LocalDirectoryModel::LocalDirectoryModel(QObject *parent)
     : QAbstractListModel(parent)
 {
@@ -52,6 +86,8 @@ QVariant LocalDirectoryModel::data(const QModelIndex &index, int role) const
         return item.url;
     case IsFolderRole:
         return item.isFolder;
+    case IsAudioRole:
+        return item.isAudio;
     case FileSizeRole: {
         if (item.isFolder)
             return QString();
@@ -77,6 +113,7 @@ QHash<int, QByteArray> LocalDirectoryModel::roleNames() const
     roles[PathRole] = "path";
     roles[UrlRole] = "url";
     roles[IsFolderRole] = "isFolder";
+    roles[IsAudioRole] = "isAudio";
     roles[FileSizeRole] = "fileSize";
     roles[FileDateRole] = "fileDate";
     return roles;
@@ -89,9 +126,16 @@ QString LocalDirectoryModel::currentPath() const
 
 void LocalDirectoryModel::setCurrentPath(const QString &path)
 {
-    QString normalized = path;
+    QString normalized = path.trimmed();
+
+    // Accept both local paths and file:// URLs (the folder of a media, for example).
+    if (normalized.startsWith("file:", Qt::CaseInsensitive)) {
+        const QUrl url(normalized);
+        normalized = url.isLocalFile() ? url.toLocalFile() : QString();
+    }
+
     if (!normalized.isEmpty())
-        normalized = QDir::cleanPath(normalized);
+        normalized = QDir::cleanPath(QFileInfo(normalized).absoluteFilePath());
 
     if (m_currentPath == normalized)
         return;
@@ -130,9 +174,26 @@ QString LocalDirectoryModel::currentDirName() const
     return name;
 }
 
+QString LocalDirectoryModel::currentUrl() const
+{
+    if (m_currentPath.isEmpty())
+        return QString();
+    return QUrl::fromLocalFile(m_currentPath).toString();
+}
+
 bool LocalDirectoryModel::canCdUp() const
 {
     return !m_currentPath.isEmpty();
+}
+
+int LocalDirectoryModel::mediaCount() const
+{
+    int count = 0;
+    for (const DirectoryItem &item : m_filteredItems) {
+        if (!item.isFolder)
+            ++count;
+    }
+    return count;
 }
 
 QVariantList LocalDirectoryModel::breadcrumbs() const
@@ -256,6 +317,16 @@ void LocalDirectoryModel::refresh()
     populate();
 }
 
+QVariantList LocalDirectoryModel::mediaUrls() const
+{
+    QVariantList urls;
+    for (const DirectoryItem &item : m_filteredItems) {
+        if (!item.isFolder)
+            urls.append(item.url);
+    }
+    return urls;
+}
+
 void LocalDirectoryModel::populate()
 {
     beginResetModel();
@@ -310,21 +381,18 @@ void LocalDirectoryModel::populate()
             }
 
             // Media files
-            QStringList filters = {
-                "*.mp4", "*.mkv", "*.avi", "*.mov", "*.wmv", "*.webm",
-                "*.m4v", "*.ts", "*.m2ts", "*.mpg", "*.mpeg", "*.flv",
-                "*.vob", "*.iso", "*.mp3", "*.flac", "*.wav", "*.aac",
-                "*.ogg", "*.m4a", "*.opus", "*.wma"
-            };
-            QFileInfoList fileList = dir.entryInfoList(filters,
-                                                      QDir::Files | QDir::Readable,
-                                                      QDir::Name | QDir::IgnoreCase);
+            const QFileInfoList fileList = dir.entryInfoList(QDir::Files | QDir::Readable,
+                                                            QDir::Name | QDir::IgnoreCase);
             for (const QFileInfo &fi : fileList) {
+                if (!isMediaFile(fi))
+                    continue;
+
                 DirectoryItem item;
                 item.name = fi.fileName();
                 item.path = fi.absoluteFilePath();
                 item.url = QUrl::fromLocalFile(item.path).toString();
                 item.isFolder = false;
+                item.isAudio = isAudioFile(fi);
                 item.size = fi.size();
                 item.mtime = fi.lastModified();
                 m_allItems.append(item);

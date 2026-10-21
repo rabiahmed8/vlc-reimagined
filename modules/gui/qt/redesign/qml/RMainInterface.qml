@@ -309,7 +309,19 @@ Item {
         y: root.compactMode ? root.compactVideo.y : root.libraryMode ? library.miniPlayerRect.y : 0
         width: root.compactMode ? root.compactVideo.width : root.libraryMode ? library.miniPlayerRect.width : root.width
         height: root.compactMode ? root.compactVideo.height : root.libraryMode ? library.miniPlayerRect.height : root.height
-        onSidebarRequested: { root.sidebarVisible = !root.sidebarVisible; root.libraryMode = false }
+        onSidebarRequested: {
+            const opening = !root.sidebarVisible
+            root.libraryMode = false
+            root.sidebarVisible = opening
+            // the library button opens the folder of the media that is playing
+            if (opening)
+                library.openFolder(RedesignSettings.directoryOf(String(Player.url || "")))
+        }
+        onFolderRequested: (directory) => {
+            root.sidebarVisible = false
+            root.libraryMode = true
+            library.openFolder(directory)
+        }
         onLibraryRequested: (page) => {
             root.sidebarVisible = false
             root.libraryMode = true

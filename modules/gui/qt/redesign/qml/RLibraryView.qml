@@ -23,11 +23,12 @@ import VLC.Player
 
 // Library of the redesign (Figma "Player-1..5"): sidebar on the left, header with
 // history, breadcrumb, sort, view and search, and the page of the current route.
-// The pages need the media library: they are loaded only when it is available.
+// Most pages need the media library and are loaded only when it is available;
+// Network and Folders work without it.
 Item {
     id: root
 
-    // route: { page: "home" | "videos" | "music" | "network" | "playlists" | "recent",
+    // route: { page: "home" | "videos" | "music" | "network" | "playlists" | "recent" | "folders",
     //          title, params: {...}, crumbs: [route, ...] (parents, for the breadcrumb) }
     property var route: ({ page: "home", title: qsTr("Home"), params: ({}), crumbs: [] })
     property var pinnedRoutes: {
@@ -100,10 +101,23 @@ Item {
     // route of a top level page of the sidebar
     function openPage(page) {
         const titles = { home: qsTr("Home"), videos: qsTr("Videos"), music: qsTr("Music"),
-                         network: qsTr("Network"), playlists: qsTr("Playlists"), recent: qsTr("Recent") }
+                         network: qsTr("Network"), playlists: qsTr("Playlists"), recent: qsTr("Recent"),
+                         folders: qsTr("Folders") }
         if (route.page === page && route.crumbs.length === 0)
             return
         navigate({ page: page, title: titles[page], params: ({}), crumbs: [] })
+    }
+    // file explorer of the computer, optionally at the folder of a media
+    function openFolder(directory) {
+        const path = String(directory === undefined || directory === null ? "" : directory)
+        if (route.page === "folders") {
+            if (page.item)
+                page.item.openPath(path)
+            else
+                route.params.directory = path
+            return
+        }
+        navigate({ page: "folders", title: qsTr("Folders"), params: { directory: path }, crumbs: [] })
     }
     // route below the current one (folder, album...)
     function openChild(title, params) {
@@ -188,6 +202,7 @@ Item {
             anchors.bottom: parent.bottom
             width: parent.width
             active: MainCtx.mediaLibraryAvailable || root.route.page === "network"
+                    || root.route.page === "folders"
             source: {
                 switch (root.route.page) {
                 case "videos": return "RLibVideosPage.qml"
@@ -195,12 +210,20 @@ Item {
                 case "network": return "RLibNetworkPage.qml"
                 case "playlists": return "RLibPlaylistsPage.qml"
                 case "recent": return "RLibRecentPage.qml"
+                case "folders": return "RLibFoldersPage.qml"
                 default: return "RLibHomePage.qml"
                 }
             }
             onLoaded: {
-                root.sortKeys = [{ key: "title", text: qsTr("Title") }]
-                item.library = root
+                if (root.route.page === "folders") {
+                    // the explorer has its own breadcrumb and no sorting
+                    root.sortKeys = []
+                    item.library = root
+                    item.openPath(root.route.params ? root.route.params.directory || "" : "")
+                } else {
+                    root.sortKeys = [{ key: "title", text: qsTr("Title") }]
+                    item.library = root
+                }
             }
         }
 

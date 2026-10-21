@@ -903,6 +903,7 @@ qml_modules += {
         'redesign/qml/RIconButton.qml',
         'redesign/qml/RIdleView.qml',
         'redesign/qml/RKeyField.qml',
+        'redesign/qml/RLibFoldersPage.qml',
         'redesign/qml/RLibHomePage.qml',
         'redesign/qml/RLibMusicPage.qml',
         'redesign/qml/RLibNetworkPage.qml',
