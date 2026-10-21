@@ -371,6 +371,9 @@ mouse_pause_policy_inherit(input_thread_t *obj)
     if (policy_str == NULL)
         goto default_val;
 
+    // Note: unknown values fall through to `default_val` as well, which keeps
+    // VLC 3's click-to-do-nothing behaviour instead of accidentally pausing.
+
     const struct mouse_pause_policy_mapping *entry =
         bsearch(policy_str, mouse_pause_policy_list, ARRAY_SIZE(mouse_pause_policy_list),
                 sizeof (*mouse_pause_policy_list), mouse_pause_policy_cmp);
@@ -381,7 +384,7 @@ mouse_pause_policy_inherit(input_thread_t *obj)
     return entry->val;
 
 default_val:
-    return VLC_MOUSE_IMMEDIATE_PAUSE_ON_RELEASED;
+    return VLC_MOUSE_PAUSE_DISABLED;
 }
 
 static void MouseEventCb(const vlc_mouse_t *newmouse, void *userdata)

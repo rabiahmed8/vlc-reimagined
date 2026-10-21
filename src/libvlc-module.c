@@ -1692,7 +1692,9 @@ vlc_module_begin ()
               KEYBOARD_EVENTS_LONGTEXT )
     add_bool( "mouse-events", true, MOUSE_EVENTS_TEXT,
               MOUSE_EVENTS_LONGTEXT )
-    add_string( "mouse-pause-policy", ppsz_mouse_pause_policy_values[0], MOUSE_PAUSE_POLICY_TEXT,
+    // VLC 3 did not pause when clicking the video; keep that behaviour by
+    // default while still letting users opt into the VLC 4 policy.
+    add_string( "mouse-pause-policy", ppsz_mouse_pause_policy_values[1], MOUSE_PAUSE_POLICY_TEXT,
               MOUSE_PAUSE_POLICY_LONGTEXT);
         change_string_list(ppsz_mouse_pause_policy_values, ppsz_mouse_pause_policy_descriptions)
     add_bool( "video-on-top", false, VIDEO_ON_TOP_TEXT,
