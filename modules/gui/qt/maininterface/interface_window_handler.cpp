@@ -506,6 +506,27 @@ bool InterfaceWindowHandler::applyKeyEvent(QKeyEvent * event) const
 {
     int key = event->key();
 
+    QQuickItem * item = p_intf->p_compositor ? p_intf->p_compositor->activeFocusItem()
+                                            : nullptr;
+
+    // Text fields keep the keyboard: typing a space must not toggle the playback.
+    if (item && (item->inherits("QQuickTextInput") || item->inherits("QQuickTextEdit")))
+    {
+        QVariant activeFocus = QQmlProperty::read(item, "activeFocus", qmlContext(item));
+        if (activeFocus.isValid() && activeFocus.toBool())
+            return false;
+    }
+
+    // NOTE: Space is always the play/pause hotkey, even when a control was clicked last
+    //       and has the keyboard focus. Otherwise Space would activate that control instead.
+    //       This has to work while browsing the library (preferHotkeys() == false) too.
+    if (key == Qt::Key_Space
+        && (event->modifiers() == Qt::NoModifier || event->modifiers() == Qt::KeypadModifier))
+    {
+        event->accept();
+        return true;
+    }
+
     // NOTE: We have to make sure tab and backtab are never used as hotkeys. When browsing the
     //       MediaLibrary, we let the view handle the navigation keys.
     if (key == Qt::Key_Tab || key == Qt::Key_Backtab || m_mainCtx->preferHotkeys() == false)
@@ -513,13 +534,10 @@ bool InterfaceWindowHandler::applyKeyEvent(QKeyEvent * event) const
         return false;
     }
 
-    QQuickItem * item = p_intf->p_compositor->activeFocusItem();
-
     // NOTE: When the item has visual focus we let it handle the key. When the item does not
     //       inherit from QQuickControl we have to declare the 'visualFocus' property ourselves.
     if (item)
     {
-
         QVariant visualFocus = QQmlProperty::read(item, "visualFocus", qmlContext(item));
         if (visualFocus.isValid())
         {
