@@ -18,9 +18,23 @@
 
 #include "localdirectorymodel.hpp"
 
+#include <QCryptographicHash>
 #include <QFileInfo>
+#include <QImage>
+#include <QPointer>
+#include <QRunnable>
 #include <QStandardPaths>
+#include <QThreadPool>
 #include <QVariantMap>
+
+#ifdef Q_OS_WIN
+# ifndef NOMINMAX
+#  define NOMINMAX
+# endif
+# include <windows.h>
+# include <objbase.h>
+# include <shobjidl.h>
+#endif
 
 namespace
 {
@@ -53,6 +67,85 @@ bool isMediaFile(const QFileInfo &file)
 {
     return mediaExtensions().contains(file.suffix().toLower());
 }
+
+QString thumbnailCacheFile(const QString &path, qint64 size, const QDateTime &mtime)
+{
+    const QByteArray key = QCryptographicHash::hash(
+                (path + '|' + QString::number(size) + '|'
+                 + QString::number(mtime.toMSecsSinceEpoch())).toUtf8(),
+                QCryptographicHash::Sha1).toHex();
+    return QStandardPaths::writableLocation(QStandardPaths::CacheLocation)
+            + QStringLiteral("/folder-thumbnails/") + QString::fromLatin1(key)
+            + QStringLiteral(".png");
+}
+
+#ifdef Q_OS_WIN
+// Asks the Windows shell (same source as Explorer) for the video thumbnail and
+// stores it as a PNG in the cache. Returns true when a file was written.
+bool saveShellThumbnail(const QString &filePath, const QString &cacheFile)
+{
+    const HRESULT hrInit = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hrInit) && hrInit != RPC_E_CHANGED_MODE)
+        return false;
+
+    bool saved = false;
+    IShellItemImageFactory *factory = nullptr;
+    const QString nativePath = QDir::toNativeSeparators(filePath);
+    if (SUCCEEDED(SHCreateItemFromParsingName(reinterpret_cast<PCWSTR>(nativePath.utf16()),
+                                              nullptr, IID_PPV_ARGS(&factory)))
+            && factory != nullptr) {
+        SIZE size = { 512, 288 };
+        HBITMAP bitmap = nullptr;
+        const HRESULT hr = factory->GetImage(size, SIIGBF_THUMBNAILONLY | SIIGBF_BIGGERSIZEOK,
+                                             &bitmap);
+        if (SUCCEEDED(hr) && bitmap != nullptr) {
+            BITMAP info = {};
+            if (GetObject(bitmap, sizeof(info), &info) && info.bmWidth > 0 && info.bmHeight > 0) {
+                QImage image;
+                if (info.bmBits != nullptr && info.bmBitsPixel == 32) {
+                    const QImage view(static_cast<const uchar *>(info.bmBits), info.bmWidth,
+                                      info.bmHeight, info.bmWidthBytes, QImage::Format_RGB32);
+                    image = view.copy();
+                } else {
+                    BITMAPINFO dib = {};
+                    dib.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+                    dib.bmiHeader.biWidth = info.bmWidth;
+                    dib.bmiHeader.biHeight = -info.bmHeight;
+                    dib.bmiHeader.biPlanes = 1;
+                    dib.bmiHeader.biBitCount = 32;
+                    dib.bmiHeader.biCompression = BI_RGB;
+                    HDC dc = CreateCompatibleDC(nullptr);
+                    if (dc != nullptr) {
+                        image = QImage(info.bmWidth, info.bmHeight, QImage::Format_RGB32);
+                        if (!GetDIBits(dc, bitmap, 0, info.bmHeight, image.bits(), &dib,
+                                       DIB_RGB_COLORS))
+                            image = QImage();
+                        DeleteDC(dc);
+                    }
+                }
+                if (!image.isNull()) {
+                    if (image.width() > 512)
+                        image = image.scaled(512, 288, Qt::KeepAspectRatio,
+                                             Qt::SmoothTransformation);
+                    QDir().mkpath(QFileInfo(cacheFile).absolutePath());
+                    saved = image.save(cacheFile, "PNG");
+                }
+            }
+            DeleteObject(bitmap);
+        }
+        factory->Release();
+    }
+
+    if (SUCCEEDED(hrInit))
+        CoUninitialize();
+    return saved;
+}
+#else
+bool saveShellThumbnail(const QString &, const QString &)
+{
+    return false;
+}
+#endif
 
 }
 
@@ -101,6 +194,20 @@ QVariant LocalDirectoryModel::data(const QModelIndex &index, int role) const
     }
     case FileDateRole:
         return item.mtime;
+    case ThumbnailRole: {
+        if (!m_thumbnailsEnabled || item.isFolder || item.isAudio)
+            return QString();
+        const auto cached = m_thumbFiles.constFind(item.path);
+        if (cached != m_thumbFiles.constEnd())
+            return QUrl::fromLocalFile(*cached).toString();
+        const QString cacheFile = thumbnailCacheFile(item.path, item.size, item.mtime);
+        if (QFileInfo::exists(cacheFile)) {
+            m_thumbFiles.insert(item.path, cacheFile);
+            return QUrl::fromLocalFile(cacheFile).toString();
+        }
+        const_cast<LocalDirectoryModel *>(this)->requestThumbnail(item.path, item.size, item.mtime);
+        return QString();
+    }
     default:
         return QVariant();
     }
@@ -116,6 +223,7 @@ QHash<int, QByteArray> LocalDirectoryModel::roleNames() const
     roles[IsAudioRole] = "isAudio";
     roles[FileSizeRole] = "fileSize";
     roles[FileDateRole] = "fileDate";
+    roles[ThumbnailRole] = "thumbnail";
     return roles;
 }
 
@@ -263,6 +371,61 @@ void LocalDirectoryModel::setSearchPattern(const QString &pattern)
 
     emit searchPatternChanged();
     emit countChanged();
+}
+
+bool LocalDirectoryModel::thumbnailsEnabled() const
+{
+    return m_thumbnailsEnabled;
+}
+
+void LocalDirectoryModel::setThumbnailsEnabled(bool enabled)
+{
+    if (m_thumbnailsEnabled == enabled)
+        return;
+
+    m_thumbnailsEnabled = enabled;
+    emit thumbnailsEnabledChanged();
+
+    if (enabled && !m_filteredItems.isEmpty())
+        emit dataChanged(index(0), index(int(m_filteredItems.size()) - 1), { ThumbnailRole });
+}
+
+void LocalDirectoryModel::requestThumbnail(const QString &path, qint64 size, const QDateTime &mtime)
+{
+    if (!m_thumbnailsEnabled || m_thumbPending.contains(path))
+        return;
+
+    const QString cacheFile = thumbnailCacheFile(path, size, mtime);
+    m_thumbPending.insert(path);
+
+    QPointer<LocalDirectoryModel> self(this);
+    QThreadPool::globalInstance()->start(QRunnable::create(
+        [self, filePath = path, cacheFile]() {
+            const bool saved = saveShellThumbnail(filePath, cacheFile);
+            if (!self)
+                return;
+            QMetaObject::invokeMethod(self, [self, filePath, cacheFile, saved]() {
+                if (self)
+                    self->thumbnailReady(filePath, saved ? cacheFile : QString());
+            }, Qt::QueuedConnection);
+        }));
+}
+
+void LocalDirectoryModel::thumbnailReady(const QString &path, const QString &cacheFile)
+{
+    m_thumbPending.remove(path);
+    if (cacheFile.isEmpty())
+        return;
+
+    m_thumbFiles.insert(path, cacheFile);
+
+    for (int row = 0; row < m_filteredItems.size(); ++row) {
+        if (m_filteredItems.at(row).path != path)
+            continue;
+        const QModelIndex modelIndex = index(row);
+        emit dataChanged(modelIndex, modelIndex, { ThumbnailRole });
+        break;
+    }
 }
 
 void LocalDirectoryModel::cd(const QString &subDirName)

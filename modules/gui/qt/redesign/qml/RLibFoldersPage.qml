@@ -53,6 +53,9 @@ Item {
     function itemSize(item) {
         return item && !item.isFolder ? String(item.fileSize || "") : ""
     }
+    function itemThumbnail(item) {
+        return item ? String(item.thumbnail || "") : ""
+    }
     function itemDate(item) {
         if (!item || !item.fileDate)
             return ""
@@ -129,6 +132,7 @@ Item {
 
     LocalDirectoryModel {
         id: dirModel
+        thumbnailsEnabled: true
         searchPattern: root.library ? root.library.searchPattern : ""
         onCurrentPathChanged: {
             if (!root.library)
@@ -318,8 +322,18 @@ Item {
                     clip: true
                     border.color: gridCell.hovered ? Theme.p.dividerBright : "transparent"
 
+                    Image {
+                        id: thumbImage
+                        anchors.fill: parent
+                        source: root.itemThumbnail(gridCell.model)
+                        visible: status === Image.Ready
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        sourceSize.width: width
+                    }
                     RIcon {
                         anchors.centerIn: parent
+                        visible: thumbImage.status !== Image.Ready
                         name: root.isFolder(gridCell.model) ? "folder"
                               : root.isAudio(gridCell.model) ? "music" : "video"
                         size: Theme.dp(40)

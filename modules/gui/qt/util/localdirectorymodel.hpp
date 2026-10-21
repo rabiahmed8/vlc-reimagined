@@ -27,6 +27,8 @@
 #include <QDateTime>
 #include <QVariantList>
 #include <QDir>
+#include <QHash>
+#include <QSet>
 
 class LocalDirectoryModel : public QAbstractListModel
 {
@@ -40,6 +42,7 @@ class LocalDirectoryModel : public QAbstractListModel
     Q_PROPERTY(QString currentUrl READ currentUrl NOTIFY currentPathChanged)
     Q_PROPERTY(QVariantList breadcrumbs READ breadcrumbs NOTIFY currentPathChanged)
     Q_PROPERTY(QString searchPattern READ searchPattern WRITE setSearchPattern NOTIFY searchPatternChanged)
+    Q_PROPERTY(bool thumbnailsEnabled READ thumbnailsEnabled WRITE setThumbnailsEnabled NOTIFY thumbnailsEnabledChanged)
 
 public:
     enum Roles {
@@ -49,7 +52,8 @@ public:
         IsFolderRole,
         IsAudioRole,
         FileSizeRole,
-        FileDateRole
+        FileDateRole,
+        ThumbnailRole
     };
 
     explicit LocalDirectoryModel(QObject *parent = nullptr);
@@ -71,6 +75,9 @@ public:
     QString searchPattern() const;
     void setSearchPattern(const QString &pattern);
 
+    bool thumbnailsEnabled() const;
+    void setThumbnailsEnabled(bool enabled);
+
     Q_INVOKABLE void cd(const QString &subDirName);
     Q_INVOKABLE void cdUp();
     Q_INVOKABLE void syncToUrl(const QUrl &url);
@@ -82,9 +89,12 @@ signals:
     void currentPathChanged();
     void countChanged();
     void searchPatternChanged();
+    void thumbnailsEnabledChanged();
 
 private:
     void populate();
+    void requestThumbnail(const QString &path, qint64 size, const QDateTime &mtime);
+    void thumbnailReady(const QString &path, const QString &cacheFile);
 
     struct DirectoryItem {
         QString name;
@@ -98,8 +108,11 @@ private:
 
     QString m_currentPath;
     QString m_searchPattern;
+    bool m_thumbnailsEnabled = false;
     QList<DirectoryItem> m_allItems;
     QList<DirectoryItem> m_filteredItems;
+    mutable QHash<QString, QString> m_thumbFiles;
+    QSet<QString> m_thumbPending;
 };
 
 #endif // LOCALDIRECTORYMODEL_HPP
