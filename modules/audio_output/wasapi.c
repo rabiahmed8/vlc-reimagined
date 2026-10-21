@@ -899,9 +899,9 @@ static HRESULT Start(aout_stream_t *s, audio_sample_format_t *restrict pfmt,
     if (sys->s24s32)
         msg_Dbg(s, "audio device configured as s24");
 
-    if (shared_mode == AUDCLNT_SHAREMODE_SHARED)
-        buffer_duration = 0;
-
+    /* Keep the requested buffer duration in shared mode too. Passing 0 lets
+     * the engine use its minimum (~20 ms on some devices), which underruns
+     * and crackles while the video decoder is busy. */
     hr = IAudioClient_Initialize(sys->client, shared_mode,
                                  AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
                                  buffer_duration,
