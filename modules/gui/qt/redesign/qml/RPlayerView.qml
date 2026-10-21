@@ -43,6 +43,8 @@ FocusScope {
     signal sidebarRequested()
     // folder of the media, to open the file explorer there
     signal folderRequested(string directory)
+    // the video was left-clicked: used to dismiss overlay sidebars
+    signal backgroundClicked()
 
     onMiniChanged: {
         // standard VLC hotkeys in the player, QML navigation in the library
@@ -112,6 +114,17 @@ FocusScope {
         cursorShape: root.barsVisible || !root.hasVideo ? Qt.ArrowCursor : Qt.BlankCursor
 
         onMouseMoved: root.poke()
+
+        // The video surface consumes the click (it is forwarded to the core),
+        // so a click on the video never reaches the TapHandler below: dismiss
+        // the open panel/sidebar from here (left click only, never pause).
+        onMousePressed: (vlcButton) => {
+            if (vlcButton !== 0)
+                return
+            if (root.openPanel !== "")
+                root.openPanel = ""
+            root.backgroundClicked()
+        }
     }
 
     // idle / audio only background

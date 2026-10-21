@@ -278,6 +278,40 @@ Item {
         else if (s.visibility === Window.FullScreen) w.showFullScreen()
     }
 
+    // Clicking anywhere on the player (bars, idle background or the video)
+    // closes the compact library overlay; a click inside the overlay does not.
+    // The video itself is handled by RPlayerView::backgroundClicked, because the
+    // video surface consumes its clicks before they reach a handler.
+    function closeCompactLibrary() {
+        if (sidebarVisible && !libraryMode)
+            sidebarVisible = false
+    }
+
+    function _insideCompactLibrary(p) {
+        return p.x >= library.x && p.x <= library.x + library.width
+               && p.y >= library.y && p.y <= library.y + library.height
+    }
+
+    // Inert parts of the overlay let the click fall through to the video surface,
+    // so the dismiss decision is made from the click position, not the receiver.
+    function playerClicked() {
+        if (!sidebarVisible || libraryMode)
+            return
+        const g = MainCtx.cursorPos()
+        if (!_insideCompactLibrary(root.mapFromGlobal(g.x, g.y)))
+            closeCompactLibrary()
+    }
+
+    TapHandler {
+        enabled: root.sidebarVisible && !root.libraryMode
+        acceptedButtons: Qt.LeftButton
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        onTapped: (eventPoint) => {
+            if (!root._insideCompactLibrary(eventPoint.position))
+                root.closeCompactLibrary()
+        }
+    }
+
     RLibraryView {
         id: library
         z: root.sidebarVisible && !root.libraryMode ? 5 : 0
@@ -328,6 +362,7 @@ Item {
             if (page.length > 0)
                 library.openPage(page)
         }
+        onBackgroundClicked: root.playerClicked()
 
     }
 

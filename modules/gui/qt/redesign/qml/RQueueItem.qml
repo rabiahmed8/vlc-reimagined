@@ -32,6 +32,7 @@ T.AbstractButton {
     leftPadding: Theme.margin
     rightPadding: Theme.margin
 
+    onClicked: MainPlaylistController.goTo(index, true)
     onDoubleClicked: MainPlaylistController.goTo(index, true)
 
     background: Rectangle {
