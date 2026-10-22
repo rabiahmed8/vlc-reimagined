@@ -101,7 +101,10 @@ Rectangle {
                 }
                 RTrackPage {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    // the embedded tracks keep their natural height (up to the
+                    // cap in RTrackPage); the output device list takes the rest
+                    Layout.preferredHeight: implicitHeight
+                    Layout.maximumHeight: implicitHeight
                     trackModel: Player.audioTracks
                 }
                 RSectionHeader { Layout.fillWidth: true; text: qsTr("Output Device") }
