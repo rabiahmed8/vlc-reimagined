@@ -1510,32 +1510,33 @@ void PlayerController::setSecondarySubtitleDelay(VLCDuration delay)
 
 int PlayerController::getAudioDelayMS() const
 {
-    return getAudioDelay().toMilliseconds();
+    // Delays can be negative, unlike regular durations.
+    return static_cast<int>(MS_FROM_VLC_TICK(getAudioDelay().toVLCTick()));
 }
 
 void PlayerController::setAudioDelayMS(int ms)
 {
-    setAudioDelay( VLCDuration::fromMS(ms) );
+    setAudioDelay( VLCDuration(VLC_TICK_FROM_MS(ms)) );
 }
 
 int PlayerController::getSubtitleDelayMS() const
 {
-    return getSubtitleDelay().toMilliseconds();
+    return static_cast<int>(MS_FROM_VLC_TICK(getSubtitleDelay().toVLCTick()));
 }
 
 void PlayerController::setSubtitleDelayMS(int ms)
 {
-    setSubtitleDelay( VLCDuration::fromMS(ms) );
+    setSubtitleDelay( VLCDuration(VLC_TICK_FROM_MS(ms)) );
 }
 
 int PlayerController::getSecondarySubtitleDelayMS() const
 {
-    return getSecondarySubtitleDelay().toMilliseconds();
+    return static_cast<int>(MS_FROM_VLC_TICK(getSecondarySubtitleDelay().toVLCTick()));
 }
 
 void PlayerController::setSecondarySubtitleDelayMS(int ms)
 {
-    setSecondarySubtitleDelay( VLCDuration::fromMS(ms) );
+    setSecondarySubtitleDelay( VLCDuration(VLC_TICK_FROM_MS(ms)) );
 }
 
 void PlayerController::setSubtitleFPS(float fps)

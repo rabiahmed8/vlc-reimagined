@@ -53,13 +53,22 @@ FocusScope {
             openPanel = ""
     }
 
-    // bars are pinned while nothing plays, a panel is open or a menu is shown
-    readonly property bool pinned: MainCtx.pinVideoControls || !hasVideo || !playing || openPanel !== ""
+    readonly property bool fullscreen: MainCtx.intfMainWindow.visibility === Window.FullScreen
+
+    // bars are pinned while nothing plays, a panel is open or a menu is shown.
+    // Only the fullscreen player hides them on inactivity (like the VLC
+    // fullscreen controller); in a window they stay visible.
+    readonly property bool pinned: !hasVideo || !playing || openPanel !== ""
                                    || mainMenu.visible || contextMenu.visible
                                    || topBar.hovered || controlBar.hovered
 
     property bool _active: true
-    readonly property bool barsVisible: !hideUi && (pinned || _active)
+    readonly property bool barsVisible: !hideUi && (!fullscreen || pinned || _active)
+
+    onFullscreenChanged: {
+        if (fullscreen)
+            poke()
+    }
 
     function poke() {
         _active = true
