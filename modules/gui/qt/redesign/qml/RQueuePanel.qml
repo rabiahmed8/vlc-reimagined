@@ -129,6 +129,17 @@ Rectangle {
                     boundsBehavior: Flickable.StopAtBounds
                     spacing: Theme.dp(2)
 
+                    // Move one row to another position in the queue.
+                    function moveRow(from, to) {
+                        const count = queueModel.count
+                        if (from === to || to < 0 || to >= count)
+                            return
+                        if (to < from)
+                            queueModel.moveItemsPre([from], to)
+                        else
+                            queueModel.moveItemsPre([from], to + 1)
+                    }
+
                     delegate: RQueueItem {
                         width: queueList.width
                     }
@@ -140,24 +151,7 @@ Rectangle {
                         wrapMode: Text.WordWrap
                         horizontalAlignment: Text.AlignHCenter
                         color: Theme.textDim
-                        text: qsTr("The queue is empty.\nDrop files here or use + to add them.")
-                    }
-
-                    DropArea {
-                        anchors.fill: parent
-                        keys: ["text/uri-list", "vlc-redesign-media"]
-                        onDropped: (drop) => {
-                            if (drop.source && drop.source.enqueueForDrop) {
-                                drop.source.enqueueForDrop()
-                                drop.accept()
-                            } else if (drop.hasUrls) {
-                                let urls = []
-                                for (let i = 0; i < drop.urls.length; ++i)
-                                    urls.push(drop.urls[i])
-                                MainPlaylistController.append(urls, MainPlaylistController.empty)
-                                drop.accept()
-                            }
-                        }
+                        text: qsTr("The queue is empty.\nUse + to add files.")
                     }
                 }
             }

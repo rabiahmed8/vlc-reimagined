@@ -50,9 +50,10 @@ T.AbstractButton {
         RText {
             anchors.left: icon.right
             anchors.leftMargin: Theme.dp(10)
-            anchors.right: duration.left
+            anchors.right: root.hovered ? actions.left : duration.left
             anchors.rightMargin: Theme.dp(10)
             anchors.verticalCenter: parent.verticalCenter
+            elide: Text.ElideRight
             text: root.model.title
             color: root.model.isCurrent ? Theme.accent : Theme.textItem
         }
@@ -60,18 +61,40 @@ T.AbstractButton {
             id: duration
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
+            visible: !root.hovered
             color: Theme.textDim
             font.pixelSize: Theme.fontSizeSmall
             text: root.model.duration && root.model.duration.valid() ? root.model.duration.formatHMS() : ""
         }
-        RIconButton {
+        Row {
+            id: actions
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            visible: root.hovered
-            iconName: "close"
-            iconSize: Theme.iconSizeSmall
-            toolTip: qsTr("Remove from queue")
-            onClicked: root.ListView.view.model.removeItems([root.index])
+            spacing: Theme.dp(2)
+
+            RIconButton {
+                iconName: "arrow_up"
+                iconSize: Theme.iconSizeSmall
+                toolTip: qsTr("Move up")
+                enabled: root.index > 0
+                opacity: root.hovered ? 1 : 0
+                onClicked: root.ListView.view.moveRow(root.index, root.index - 1)
+            }
+            RIconButton {
+                iconName: "arrow_down"
+                iconSize: Theme.iconSizeSmall
+                toolTip: qsTr("Move down")
+                enabled: root.index < root.ListView.view.count - 1
+                opacity: root.hovered ? 1 : 0
+                onClicked: root.ListView.view.moveRow(root.index, root.index + 1)
+            }
+            RIconButton {
+                iconName: "close"
+                iconSize: Theme.iconSizeSmall
+                toolTip: qsTr("Remove from queue")
+                opacity: root.hovered ? 1 : 0
+                onClicked: root.ListView.view.model.removeItems([root.index])
+            }
         }
     }
 }
