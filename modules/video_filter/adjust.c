@@ -42,6 +42,19 @@
 
 #include "adjust_sat_hue.h"
 
+/*
+ * The luma table only has i_max + 1 entries. A 16-bit picture can carry
+ * samples above i_max when its chroma does not describe its actual layout
+ * (e.g. left-aligned P010 data under a little-endian 10-bit chroma, as some
+ * hardware outputs deliver). Indexing the table with those samples reads far
+ * outside the stack; clamp them instead of crashing.
+ */
+static inline int LumaLookup( const int *pi_luma, unsigned i_max,
+                              uint16_t i_sample )
+{
+    return pi_luma[ i_sample > i_max ? i_max : i_sample ];
+}
+
 /*****************************************************************************
  * Local prototypes
  *****************************************************************************/
@@ -295,17 +308,21 @@ static void FilterPlanar( filter_t *p_filter, picture_t *p_pic, picture_t *p_out
             for( ; p_in < p_line_end ; )
             {
                 /* Do 8 pixels at a time */
-                *p_out++ = pi_luma[ *p_in++ ]; *p_out++ = pi_luma[ *p_in++ ];
-                *p_out++ = pi_luma[ *p_in++ ]; *p_out++ = pi_luma[ *p_in++ ];
-                *p_out++ = pi_luma[ *p_in++ ]; *p_out++ = pi_luma[ *p_in++ ];
-                *p_out++ = pi_luma[ *p_in++ ]; *p_out++ = pi_luma[ *p_in++ ];
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
             }
 
             p_line_end += 8;
 
             for( ; p_in < p_line_end ; )
             {
-                *p_out++ = pi_luma[ *p_in++ ];
+                *p_out++ = LumaLookup( pi_luma, i_max, *p_in++ );
             }
 
             p_in += (p_pic->p[Y_PLANE].i_pitch >> 1)
