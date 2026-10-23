@@ -75,7 +75,7 @@
  */
 
 /* VLC Reimagined update manifest. Plain text, three parts:
- *   line 1: latest version, e.g. 4.0.1
+ *   line 1: latest version, e.g. 1.0.1
  *   line 2: full https URL of the Windows installer (.exe)
  *   rest:   release notes, shown in the update dialog
  *
@@ -84,7 +84,7 @@
  * or at run time with the VLC_REIMAGINED_UPDATE_URL environment variable
  * (useful to test a manifest before publishing it). */
 #ifndef VLC_REIMAGINED_UPDATE_URL
-# define VLC_REIMAGINED_UPDATE_URL "https://vlc-reimagined.example.com/update/win64.txt"
+# define VLC_REIMAGINED_UPDATE_URL "https://vlc-reimagined.vercel.app/update/win64.txt"
 #endif
 #define UPDATE_VLC_STATUS_URL VLC_REIMAGINED_UPDATE_URL
 

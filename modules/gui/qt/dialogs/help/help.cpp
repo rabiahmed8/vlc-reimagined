@@ -96,7 +96,7 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
     ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt; color:#353535;\"> " + qtr( "VLC Reimagined" ) + " </span></p></body></html>");
 
     ui.MainBlabla->setText("<html><head/><body>" +
-    qtr( "<p>VLC Reimagined is an open source media player built on VLC, made by the volunteers of the <a href=\"https://www.videolan.org/\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</span></a> community.</p><p>VLC uses its internal codecs, works on essentially every popular platform, and can read almost all files, CDs, DVDs, network streams, capture cards and other media formats!</p><p><a href=\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: underline; color:#0057ae;\">Help and join us!</span></a>" ) +
+    qtr( "<p>VLC Reimagined is an independent, open source fork of VLC media player, built on the engine, codecs and Qt interface created by <a href=\"https://www.videolan.org/\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</span></a> and its contributors. It is not affiliated with or endorsed by VideoLAN.</p><p>It plays almost every file, disc and stream, and installs alongside the official VLC.</p><p><a href=\"https://vlc-reimagined.vercel.app/\"><span style=\" text-decoration: underline; color:#0057ae;\">Website</span></a> &middot; <a href=\"https://github.com/rabiahmed8/vlc-reimagined\"><span style=\" text-decoration: underline; color:#0057ae;\">Source code</span></a> &middot; <a href=\"https://github.com/rabiahmed8/vlc-reimagined/issues\"><span style=\" text-decoration: underline; color:#0057ae;\">Report an issue</span></a>" ) +
     "</p></body> </html>");
 
     const QDate today = QDate::currentDate();

@@ -9,11 +9,12 @@
 #   extras/package/win32/package-redesign.sh
 #
 # Environment variables (all optional):
-#   VERSION            version shown by the installer (default: 4.0.0)
+#   VERSION            version shown by the installer (default: 1.0.0)
 #   PRODUCT_NAME       application name       (default: VLC Reimagined)
 #   PRODUCT_PUBLISHER  vendor shown in setup  (default: VLC Reimagined)
-#   PRODUCT_WEBSITE    website shown in setup (default: https://www.videolan.org/)
+#   PRODUCT_WEBSITE    website shown in setup (default: https://vlc-reimagined.vercel.app)
 #   BUILD_DIR          meson build directory  (default: <repo>/build/win64-meson)
+#   INSTALL_DIR        installed VLC tree     (default: <BUILD_DIR>/vlc-win64)
 #   WORK_DIR           output directory       (default: <repo>/build/package)
 #
 # NOTE about redistribution: VLC is GPLv2+/LGPLv2.1+ and its name/logo are
@@ -25,12 +26,12 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 BUILD_DIR=${BUILD_DIR:-$ROOT/build/win64-meson}
-INSTALL_DIR=$BUILD_DIR/vlc-win64
+INSTALL_DIR=${INSTALL_DIR:-$BUILD_DIR/vlc-win64}
 WORK_DIR=${WORK_DIR:-$ROOT/build/package}
-VERSION=${VERSION:-4.0.0}
+VERSION=${VERSION:-1.0.0}
 PRODUCT_NAME=${PRODUCT_NAME:-"VLC Reimagined"}
 PRODUCT_PUBLISHER=${PRODUCT_PUBLISHER:-"VLC Reimagined"}
-PRODUCT_WEBSITE=${PRODUCT_WEBSITE:-"https://www.videolan.org/"}
+PRODUCT_WEBSITE=${PRODUCT_WEBSITE:-"https://vlc-reimagined.vercel.app"}
 
 MAKE_PORTABLE=1
 MAKE_INSTALLER=1
