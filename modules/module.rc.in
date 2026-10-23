@@ -12,7 +12,7 @@ BEGIN
     BLOCK "040904E4"
     BEGIN
       VALUE "CompanyName", "VideoLAN"
-      VALUE "ProductName", "VLC media player"
+      VALUE "ProductName", "VLC Reimagined"
       VALUE "ProductVersion", VERSION_NUMBER_STR
       VALUE "FileVersion", "@VERSION@"
       VALUE "FileDescription", "LibVLC plugin"

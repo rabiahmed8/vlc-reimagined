@@ -80,7 +80,6 @@ Item {
             }
         }
 
-        onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
         onActivated: (index, item) => root.library.openChild(item.title, { folderId: item.id })
         onContextMenuRequested: (index, item, pos) => menu.openFor(item, pos, true)
     }
@@ -97,7 +96,6 @@ Item {
             fallbackIcon: "folder"
             model: folders
             onActivated: (index, item) => root.library.openChild(item.title, { folderId: item.id })
-            onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
             onContextMenuRequested: (index, item, pos) => menu.openFor(item, pos, true)
         }
         anchors.fill: parent
@@ -106,7 +104,6 @@ Item {
         model: videos
         currentMrl: Player.isStarted ? String(Player.url) : ""
 
-        onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
         onActivated: (index, item) => MediaLib.addAndPlay(item.id)
         onContextMenuRequested: (index, item, pos) => menu.openFor(item, pos, false, () => videos.setItemPlayed(videos.index(index, 0), !(item.progress > 0 || item.playcount > 0)))
     }

@@ -110,7 +110,6 @@ Item {
         fallbackIcon: "file"
         model: media
         currentMrl: Player.isStarted ? String(Player.url) : ""
-        onEnqueueRequested: (index, item) => media.addToPlaylist(index)
         onActivated: (index, item) => root.open(media, index, item)
     }
 

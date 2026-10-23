@@ -51,7 +51,6 @@ Item {
         grid: root.library ? root.library.grid : true
         model: recent
         currentMrl: Player.isStarted ? String(Player.url) : ""
-        onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
         onActivated: (index, item) => MediaLib.addAndPlay(item.id)
         onContextMenuRequested: (index, item, pos) => menu.openFor(item, pos, false)
     }

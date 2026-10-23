@@ -43,6 +43,7 @@
 #include <QEvent>
 #include <QDate>
 #include <QPushButton>
+#include <QTimer>
 
 #include <cassert>
 
@@ -92,10 +93,10 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
     setWindowModality( Qt::WindowModal );
 
     ui.version->setText(qfu( " " VERSION_MESSAGE ) );
-    ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt; color:#353535;\"> " + qtr( "VLC media player" ) + " </span></p></body></html>");
+    ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt; color:#353535;\"> " + qtr( "VLC Reimagined" ) + " </span></p></body></html>");
 
     ui.MainBlabla->setText("<html><head/><body>" +
-    qtr( "<p>VLC media player is a free and open source media player, encoder, and streamer made by the volunteers of the <a href=\"https://www.videolan.org/\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</span></a> community.</p><p>VLC uses its internal codecs, works on essentially every popular platform, and can read almost all files, CDs, DVDs, network streams, capture cards and other media formats!</p><p><a href=\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: underline; color:#0057ae;\">Help and join us!</span></a>" ) +
+    qtr( "<p>VLC Reimagined is an open source media player built on VLC, made by the volunteers of the <a href=\"https://www.videolan.org/\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</span></a> community.</p><p>VLC uses its internal codecs, works on essentially every popular platform, and can read almost all files, CDs, DVDs, network streams, capture cards and other media formats!</p><p><a href=\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: underline; color:#0057ae;\">Help and join us!</span></a>" ) +
     "</p></body> </html>");
 
     const QDate today = QDate::currentDate();
@@ -403,7 +404,7 @@ UpdateDialog::UpdateDialog( qt_intf_t *_p_intf ) : QVLCFrame( _p_intf )
     ui.updateNotifyButtonBox->addButton( new QPushButton( qtr("&No"), this ),
                                          QDialogButtonBox::RejectRole );
 
-    setWindowTitle( qtr( "VLC media player updates" ) );
+    setWindowTitle( qtr( "VLC Reimagined updates" ) );
     setWindowRole( "vlc-update" );
 
     BUTTONACT( recheckButton, &UpdateDialog::checkOrDownload );
@@ -436,8 +437,14 @@ bool UpdateDialog::event(QEvent* event)
     {
         switch(event->type())
         {
-        case QEvent::Hide:
         case QEvent::Show:
+            m_model->resetExplicitCheck();
+            /* "Check for Updates" opens the dialog: start looking right away
+             * instead of waiting for the user to click "Recheck version". */
+            if (m_model->updateStatus() == UpdateModel::Unchecked)
+                QTimer::singleShot(0, this, &UpdateDialog::checkOrDownload);
+            break;
+        case QEvent::Hide:
         case QEvent::Close:
         case QEvent::Destroy:
             m_model->resetExplicitCheck();
@@ -482,7 +489,7 @@ void UpdateDialog::updateUI( )
         ui.stackedWidget->setCurrentWidget( ui.updateNotifyPage );
         int extra = m_model->getExtra();
         QString message = QString(
-                              qtr( "A new version of VLC (%1.%2.%3%4) is available." ) )
+                              qtr( "A new version of VLC Reimagined (%1.%2.%3%4) is available." ) )
                               .arg( m_model->getMajor() )
                               .arg( m_model->getMinor() )
                               .arg( m_model->getRevision()  )
@@ -505,7 +512,7 @@ void UpdateDialog::updateUI( )
     {
         ui.stackedWidget->setCurrentWidget( ui.updateDialogPage );
         ui.updateDialogLabel->setText(
-            qtr( "You have the latest version of VLC media player." ) );
+            qtr( "You have the latest version of VLC Reimagined." ) );
         break;
     }
     case UpdateModel::CheckFailed:

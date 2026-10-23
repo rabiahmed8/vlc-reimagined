@@ -94,7 +94,6 @@ Item {
             }
         }
 
-        onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
         onActivated: (index, item) => {
             switch (root.mode) {
             case "albums": case "artist":

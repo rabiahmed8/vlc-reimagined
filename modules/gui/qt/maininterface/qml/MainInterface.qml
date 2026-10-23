@@ -46,6 +46,9 @@ Item {
     Accessible.name: qsTr("Main interface")
     AccessibleCompat.id: "mainInterface"
 
+    // The frameless window has no title of its own; use it for the taskbar.
+    Binding { target: MainCtx.intfMainWindow; property: "title"; value: qsTr("VLC Reimagined") }
+
     property bool _extendedFrameVisible: MainCtx.windowSuportExtendedFrame
                                       && MainCtx.clientSideDecoration
                                       && (MainCtx.intfMainWindow.visibility === Window.Windowed)

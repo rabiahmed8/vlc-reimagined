@@ -73,7 +73,6 @@ Item {
         fallbackIcon: root.inPlaylist ? "file" : "playlist"
         model: root.inPlaylist ? content : playlists
         currentMrl: Player.isStarted ? String(Player.url) : ""
-        onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
         onActivated: (index, item) => {
             if (root.inPlaylist)
                 MediaLib.addAndPlay(item.id)

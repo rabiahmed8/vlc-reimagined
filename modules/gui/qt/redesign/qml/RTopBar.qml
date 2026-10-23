@@ -120,8 +120,10 @@ Rectangle {
                 visible: root.libraryAvailable && root.locationName.length > 0
                 hoverEnabled: true
                 Accessible.name: root.locationName
+                // the folder name must not push the title out: cap the button
+                readonly property real maxWidth: root.width * 0.26
                 implicitHeight: Theme.dp(28)
-                implicitWidth: Math.min(locationRow.implicitWidth + Theme.dp(8), root.width * 0.26)
+                implicitWidth: Math.min(locationRow.implicitWidth + Theme.dp(8), maxWidth)
                 onClicked: root.locationClicked()
 
                 background: Rectangle {
@@ -134,7 +136,13 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: Theme.dp(4)
                         RIcon { name: "folder"; anchors.verticalCenter: parent.verticalCenter }
-                        RText { text: root.locationName; width: Math.max(0, locationBtn.width - Theme.dp(32)); anchors.verticalCenter: parent.verticalCenter }
+                        RText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            // cap against the button budget, not against its
+                            // (not yet computed) width: avoids a binding loop
+                            width: Math.min(implicitWidth, locationBtn.maxWidth - Theme.dp(32))
+                            text: root.locationName
+                        }
                     }
                 }
             }
@@ -150,7 +158,7 @@ Rectangle {
                     return Player.title
                 if (Player.isStarted && Player.name.length > 0)
                     return Player.name
-                return qsTr("VLC Media Player")
+                return qsTr("VLC Reimagined")
             }
         }
     }

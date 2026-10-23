@@ -43,6 +43,8 @@ Item {
     Accessible.name: qsTr("Main interface")
 
     Binding { target: Theme; property: "scale"; value: MainCtx.intfScaleFactor }
+    // The frameless window has no title of its own; use it for the taskbar.
+    Binding { target: MainCtx.intfMainWindow; property: "title"; value: qsTr("VLC Reimagined") }
     // dark/light/system and the accent are chosen in Settings > General (see Theme.mode)
 
     // ---- secondary windows of the redesign, created on first use
@@ -407,6 +409,14 @@ Item {
     Loader {
         asynchronous: true
         source: "qrc:///qt/qml/VLC/Menus/GlobalShortcuts.qml"
+    }
+
+    // Core dialogs (update download progress, "install now?" questions, errors)
+    // are rendered by the same component as the classic interface.
+    Dialogs {
+        z: 100
+        anchors.fill: parent
+        bgContent: root
     }
 
     Component.onDestruction: if (compactMode) leaveMiniPlayer()

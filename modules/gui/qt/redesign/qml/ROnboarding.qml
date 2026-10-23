@@ -71,7 +71,7 @@ Rectangle {
             width: parent.width
             wrapMode: Text.Wrap
             lineHeight: 1.4
-            text: qsTr("VLC is a free and open source cross-platform multimedia player and framework that plays most multimedia files as well as DVDs, Audio CDs, VCDs, and various streaming protocols.")
+            text: qsTr("VLC Reimagined is an open source multimedia player built on VLC. It plays most multimedia files, DVDs, Audio CDs, VCDs and streaming protocols.")
             color: Theme.textItem
         }
         Item { width: 1; height: Theme.dp(30) }

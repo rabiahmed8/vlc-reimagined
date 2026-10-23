@@ -84,7 +84,6 @@ Flickable {
 
         RMediaView {
             id: row
-            onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
             width: parent.width
             height: cellHeight
             flow: GridView.FlowTopToBottom   // a single horizontal row

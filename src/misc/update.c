@@ -74,11 +74,19 @@
  * Remaining text is a required description of the update
  */
 
-#ifndef NDEBUG
-# define UPDATE_VLC_STATUS_URL "https://update-test.videolan.org/vlc/status"
-#else
-# define UPDATE_VLC_STATUS_URL "https://update.videolan.org/vlc/status"
+/* VLC Reimagined update manifest. Plain text, three parts:
+ *   line 1: latest version, e.g. 4.0.1
+ *   line 2: full https URL of the Windows installer (.exe)
+ *   rest:   release notes, shown in the update dialog
+ *
+ * See extras/package/win32/README-updates.md for the release workflow.
+ * The default can be overridden at build time (-DVLC_REIMAGINED_UPDATE_URL)
+ * or at run time with the VLC_REIMAGINED_UPDATE_URL environment variable
+ * (useful to test a manifest before publishing it). */
+#ifndef VLC_REIMAGINED_UPDATE_URL
+# define VLC_REIMAGINED_UPDATE_URL "https://vlc-reimagined.example.com/update/win64.txt"
 #endif
+#define UPDATE_VLC_STATUS_URL VLC_REIMAGINED_UPDATE_URL
 
 #define dialog_FatalWait( p_obj, psz_title, psz_fmt, ... ) \
     vlc_dialog_wait_question( p_obj, VLC_DIALOG_QUESTION_CRITICAL, "OK", NULL, \
@@ -172,23 +180,11 @@ static void EmptyRelease( update_t *p_update )
  */
 static bool GetUpdateFile( update_t *p_update )
 {
-#if defined(_WIN32) && (defined(__aarch64__) || defined(_M_ARM64))
-    static const char url[] = UPDATE_VLC_STATUS_URL "-win-arm64";
-#elif defined(_WIN64)
-    static const char url[] = UPDATE_VLC_STATUS_URL "-win-x64";
-#elif defined(_WIN32)
-    static const char *urls[] = {
-        UPDATE_VLC_STATUS_URL "-win-x86", UPDATE_VLC_STATUS_URL "-win-x64"
-    };
-    BOOL sixtyfour;
-
-    if (!IsWow64Process(GetCurrentProcess(), &sixtyfour))
-        sixtyfour = FALSE; // not clear how this can fail but MSDN says so
-
-    const char *url = urls[sixtyfour != FALSE];
-#else
-    static const char url[] = UPDATE_VLC_STATUS_URL;
-#endif
+    /* One manifest for the single Windows build we distribute; the
+     * environment variable is only meant for testing a staging manifest. */
+    const char *url = getenv("VLC_REIMAGINED_UPDATE_URL");
+    if (url == NULL || *url == '\0')
+        url = UPDATE_VLC_STATUS_URL;
     stream_t *p_stream = NULL;
     char *psz_version_line = NULL;
     char *psz_update_data = NULL;
@@ -197,7 +193,7 @@ static bool GetUpdateFile( update_t *p_update )
     if( !p_stream )
     {
         msg_Err( p_update->p_libvlc, "Failed to open %s for reading",
-                 UPDATE_VLC_STATUS_URL );
+                 url );
         goto error;
     }
 
@@ -216,7 +212,7 @@ static bool GetUpdateFile( update_t *p_update )
                          i_read ) != (ssize_t)i_read )
     {
         msg_Err( p_update->p_libvlc, "Couldn't download update file %s",
-                UPDATE_VLC_STATUS_URL );
+                url );
         goto error;
     }
     psz_update_data[i_read] = '\0';
@@ -251,7 +247,7 @@ static bool GetUpdateFile( update_t *p_update )
     if( i_len == 0 )
     {
         msg_Err( p_update->p_libvlc, "Update file %s is corrupted: URL missing",
-                 UPDATE_VLC_STATUS_URL );
+                 url );
 
         goto error;
     }
@@ -271,7 +267,7 @@ static bool GetUpdateFile( update_t *p_update )
     {
         msg_Err( p_update->p_libvlc,
                 "Update file %s is corrupted: description missing",
-                UPDATE_VLC_STATUS_URL );
+                url );
         goto error;
     }
 
@@ -280,105 +276,12 @@ static bool GetUpdateFile( update_t *p_update )
     strncpy( p_update->release.psz_desc, psz_update_data_parser, i_len );
     p_update->release.psz_desc[i_len] = '\0';
 
-    /* Now that we know the status is valid, we must download its signature
-     * to authenticate it */
-    signature_packet_t sign;
-    if( download_signature( VLC_OBJECT( p_update->p_libvlc ), &sign,
-            UPDATE_VLC_STATUS_URL ) != VLC_SUCCESS )
-    {
-        msg_Err( p_update->p_libvlc, "Couldn't download signature of status file" );
-        goto error;
-    }
-
-    if( sign.type != BINARY_SIGNATURE && sign.type != TEXT_SIGNATURE )
-    {
-        msg_Err( p_update->p_libvlc, "Invalid signature type" );
-        goto error;
-    }
-
-    p_update->p_pkey = (public_key_t*)malloc( sizeof( public_key_t ) );
-    if( !p_update->p_pkey )
-        goto error;
-
-    if( parse_public_key( videolan_public_key, sizeof( videolan_public_key ),
-                        p_update->p_pkey, NULL ) != VLC_SUCCESS )
-    {
-        msg_Err( p_update->p_libvlc, "Couldn't parse embedded public key, something went really wrong..." );
-        FREENULL( p_update->p_pkey );
-        goto error;
-    }
-
-    memcpy( p_update->p_pkey->longid, videolan_public_key_longid, 8 );
-
-    if( memcmp( sign.issuer_longid, p_update->p_pkey->longid , 8 ) != 0 )
-    {
-        msg_Dbg( p_update->p_libvlc, "Need to download the GPG key" );
-        public_key_t *p_new_pkey = download_key(
-                VLC_OBJECT(p_update->p_libvlc),
-                sign.issuer_longid, videolan_public_key_longid );
-        if( !p_new_pkey )
-        {
-            msg_Err( p_update->p_libvlc, "Couldn't download GPG key" );
-            FREENULL( p_update->p_pkey );
-            goto error;
-        }
-
-        uint8_t *p_hash = hash_from_public_key( p_new_pkey );
-        if( !p_hash )
-        {
-            msg_Err( p_update->p_libvlc, "Failed to hash signature" );
-            free( p_new_pkey );
-            FREENULL( p_update->p_pkey );
-            goto error;
-        }
-
-        if( verify_signature( &p_new_pkey->sig,
-                    &p_update->p_pkey->key, p_hash ) == VLC_SUCCESS )
-        {
-            free( p_hash );
-            msg_Info( p_update->p_libvlc, "Key authenticated" );
-            free( p_update->p_pkey );
-            p_update->p_pkey = p_new_pkey;
-        }
-        else
-        {
-            free( p_hash );
-            msg_Err( p_update->p_libvlc, "Key signature invalid !" );
-            goto error;
-        }
-    }
-
-    uint8_t *p_hash = hash_from_text( psz_update_data, &sign );
-    if( !p_hash )
-    {
-        msg_Warn( p_update->p_libvlc, "Can't compute hash for status file" );
-        goto error;
-    }
-
-    else if( p_hash[0] != sign.hash_verification[0] ||
-        p_hash[1] != sign.hash_verification[1] )
-    {
-        msg_Warn( p_update->p_libvlc, "Bad hash for status file" );
-        free( p_hash );
-        goto error;
-    }
-
-    else if( verify_signature( &sign, &p_update->p_pkey->key, p_hash )
-            != VLC_SUCCESS )
-    {
-        msg_Err( p_update->p_libvlc, "BAD SIGNATURE for status file" );
-        free( p_hash );
-        goto error;
-    }
-
-    else
-    {
-        msg_Info( p_update->p_libvlc, "Status file authenticated" );
-        free( p_hash );
-        free( psz_version_line );
-        free( psz_update_data );
-        return true;
-    }
+    /* VLC Reimagined does not use VideoLAN's PGP-signed status files:
+     * the manifest is served over HTTPS from the distribution domain. */
+    msg_Info( p_update->p_libvlc, "Update manifest loaded from %s", url );
+    free( psz_version_line );
+    free( psz_update_data );
+    return true;
 
 error:
     if( p_stream )
@@ -468,11 +371,8 @@ bool update_NeedUpgrade( update_t *p_update )
             return false;
     }
 
-    /* current version is not a release, it's a -git or -rc version */
-    if (*PACKAGE_VERSION_DEV)
-        return true;
-
-    /* current version is latest version */
+    /* VLC Reimagined compares versions numerically only: a local "-dev"
+     * build must not be reported as outdated when it has the latest code. */
     return false;
 }
 
@@ -585,7 +485,8 @@ static void* update_DownloadReal( void *obj )
         goto end;
     }
 
-    p_file = vlc_fopen( psz_destfile, "w" );
+    /* binary mode: the installer must not be altered on Windows */
+    p_file = vlc_fopen( psz_destfile, "wb" );
     if( !p_file )
     {
         msg_Err( p_udt, "Failed to open %s for writing", psz_destfile );
@@ -596,7 +497,7 @@ static void* update_DownloadReal( void *obj )
     }
 
     /* Create a buffer and fill it with the downloaded file */
-    p_buffer = (void *)malloc( 1 << 10 );
+    p_buffer = (void *)malloc( 1 << 16 );
     if( unlikely(p_buffer == NULL) )
         goto end;
 
@@ -615,7 +516,7 @@ static void* update_DownloadReal( void *obj )
         goto end;
 
     while( !atomic_load( &p_udt->aborted ) &&
-           ( i_read = vlc_stream_Read( p_stream, p_buffer, 1 << 10 ) ) &&
+           ( i_read = vlc_stream_Read( p_stream, p_buffer, 1 << 16 ) ) &&
            !vlc_dialog_is_cancelled( p_udt, p_dialog_id ) )
     {
         if( fwrite( p_buffer, i_read, 1, p_file ) < 1 )
@@ -652,91 +553,17 @@ static void* update_DownloadReal( void *obj )
         goto end;
     }
 
-    signature_packet_t sign;
-    if( download_signature( VLC_OBJECT( p_udt ), &sign,
-            p_update->release.psz_url ) != VLC_SUCCESS )
-    {
-        vlc_unlink( psz_destfile );
-
-        dialog_FatalWait( p_udt, _("File could not be verified"),
-            _("It was not possible to download a cryptographic signature for "
-              "the downloaded file \"%s\". Thus, it was deleted."),
-            psz_destfile );
-        msg_Err( p_udt, "Couldn't download signature of downloaded file" );
-        goto end;
-    }
-
-    if( memcmp( sign.issuer_longid, p_update->p_pkey->longid, 8 ) )
-    {
-        vlc_unlink( psz_destfile );
-        msg_Err( p_udt, "Invalid signature issuer" );
-        dialog_FatalWait( p_udt, _("Invalid signature"),
-            _("The cryptographic signature for the downloaded file \"%s\" was "
-              "invalid and could not be used to securely verify it. Thus, the "
-              "file was deleted."),
-            psz_destfile );
-        goto end;
-    }
-
-    if( sign.type != BINARY_SIGNATURE )
-    {
-        vlc_unlink( psz_destfile );
-        msg_Err( p_udt, "Invalid signature type" );
-        dialog_FatalWait( p_udt, _("Invalid signature"),
-            _("The cryptographic signature for the downloaded file \"%s\" was "
-              "invalid and could not be used to securely verify it. Thus, the "
-              "file was deleted."),
-            psz_destfile );
-        goto end;
-    }
-
-    uint8_t *p_hash = hash_from_file( psz_destfile, &sign );
-    if( !p_hash )
-    {
-        msg_Err( p_udt, "Unable to hash %s", psz_destfile );
-        vlc_unlink( psz_destfile );
-        dialog_FatalWait( p_udt, _("File not verifiable"),
-            _("It was not possible to securely verify the downloaded file"
-              " \"%s\". Thus, it was deleted."),
-            psz_destfile );
-
-        goto end;
-    }
-
-    if( p_hash[0] != sign.hash_verification[0] ||
-        p_hash[1] != sign.hash_verification[1] )
-    {
-        vlc_unlink( psz_destfile );
-        dialog_FatalWait( p_udt, _("File corrupted"),
-            _("Downloaded file \"%s\" was corrupted. Thus, it was deleted."),
-             psz_destfile );
-        msg_Err( p_udt, "Bad hash for %s", psz_destfile );
-        free( p_hash );
-        goto end;
-    }
-
-    if( verify_signature( &sign, &p_update->p_pkey->key, p_hash )
-            != VLC_SUCCESS )
-    {
-        vlc_unlink( psz_destfile );
-        dialog_FatalWait( p_udt, _("File corrupted"),
-            _("Downloaded file \"%s\" was corrupted. Thus, it was deleted."),
-             psz_destfile );
-        msg_Err( p_udt, "BAD SIGNATURE for %s", psz_destfile );
-        free( p_hash );
-        goto end;
-    }
-
-    msg_Info( p_udt, "%s authenticated", psz_destfile );
-    free( p_hash );
+    /* VLC Reimagined serves its installer over HTTPS from its own domain,
+     * so there is no VideoLAN PGP signature to verify here. */
+    msg_Info( p_udt, "%s downloaded", psz_destfile );
 
 #ifdef _WIN32
     const char *psz_msg =
         _("The new version was successfully downloaded. "
-          "Do you want to close VLC and install it now?");
+          "Do you want to close VLC Reimagined and install it now?");
     int answer = vlc_dialog_wait_question( p_udt, VLC_DIALOG_QUESTION_NORMAL,
                                            _("Cancel"), _("Install"), NULL,
-                                           _("Update VLC media player"), "%s",
+                                           _("Update VLC Reimagined"), "%s",
                                            psz_msg );
     if(answer == 1)
     {

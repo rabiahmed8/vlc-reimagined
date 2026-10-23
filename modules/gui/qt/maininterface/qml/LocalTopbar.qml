@@ -186,7 +186,7 @@ T.ToolBar {
                             2 * Math.min(parent.width / 2 - navigationButtons.x - navigationButtons.width,
                                          playqueueButtonsTop.x - parent.width / 2) - VLCStyle.margin_normal)
 
-            text: (Player.title !== "") ? Player.title : qsTr("VLC media player")
+            text: (Player.title !== "") ? Player.title : qsTr("VLC Reimagined")
             color: theme.fg.primary
             font.pixelSize: VLCStyle.fontSize_large
             elide: Text.ElideRight

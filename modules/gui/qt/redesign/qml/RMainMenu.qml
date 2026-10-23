@@ -50,6 +50,7 @@ RMenu {
     RAction { iconName: "fullscreen"; text: qsTr("Mini player"); enabled: Player.isStarted; onTriggered: RWindows.miniPlayerRequested() }
     RAction { iconName: "hotkeys_2t";  text: qsTr("Keyboard Shortcuts");    onTriggered: RWindows.shortcutsRequested() }
     RAction { iconName: "paint_2t";    text: qsTr("Customize Player");      onTriggered: RWindows.customizeRequested() }
+    RAction { iconName: "refresh_2t";  text: qsTr("Check for Updates");     onTriggered: DialogsProvider.updateDialog(DialogsProvider.Show) }
     RAction { iconName: "settings_2t"; text: qsTr("Settings");              shortcutText: "Ctrl + P"; onTriggered: DialogsProvider.prefsDialog() }
-    RAction { iconName: "info_2t";     text: qsTr("About VLC");             shortcutText: "Shift + F1"; onTriggered: DialogsProvider.aboutDialog() }
+    RAction { iconName: "info_2t";     text: qsTr("About VLC Reimagined");  shortcutText: "Shift + F1"; onTriggered: DialogsProvider.aboutDialog() }
 }

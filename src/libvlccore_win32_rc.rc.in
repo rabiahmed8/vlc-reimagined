@@ -14,10 +14,10 @@ BEGIN
     BLOCK "040904E4"
     BEGIN
       VALUE "CompanyName", "VideoLAN"
-      VALUE "ProductName", "VLC media player"
+      VALUE "ProductName", "VLC Reimagined"
       VALUE "ProductVersion", VERSION_NUMBER_STR
       VALUE "FileVersion", "@VERSION@"
-      VALUE "FileDescription", "VLC media player"
+      VALUE "FileDescription", "VLC Reimagined"
       VALUE "LegalCopyright", "Copyright \251 @COPYRIGHT_YEARS@ VideoLAN and VLC Authors"
       VALUE "LegalTrademarks", "VLC media player, VideoLAN and x264 are registered trademarks from VideoLAN"
     END

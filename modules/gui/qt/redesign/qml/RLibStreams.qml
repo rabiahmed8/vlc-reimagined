@@ -33,7 +33,6 @@ Column {
         interactive: false; grid: root.library ? root.library.grid : false
         square: true; fallbackIcon: "streaming"; model: streams
         onActivated: (index, item) => streams.addAndPlay(String(item.url))
-        onEnqueueRequested: (index, item) => MediaLib.addToPlaylist(item.id)
         onContextMenuRequested: (index, item, pos) => menu.openFor(item, pos, false)
     }
     RMediaMenu { id: menu }
